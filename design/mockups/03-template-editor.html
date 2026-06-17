@@ -1,0 +1,387 @@
+<!-- @dsCard group="Bulletin Studio" name="03 · Éditeur de template" -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulletin Studio — Éditeur de template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Mulish:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#007d7e; --teal-dark:#00595a; --teal-ghost:#e3f1f1;
+  --ink:#161a1c; --slate:#3e4c53; --muted:#69787f;
+  --desk:#e9ebec; --line:#dee3e5;
+  --amber:#b45309; --amber-bg:#fdf1e0;
+  --green:#1b7f4d; --green-bg:#e6f4ec;
+  --sidebar:#1d2a30;
+  --ui:"Mulish",sans-serif; --display:"Fraunces",serif;
+  --doc:Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ui);background:var(--desk);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ───────── top bar ───────── */
+.bar{display:flex;align-items:center;gap:13px;background:#fff;border-bottom:1px solid var(--line);padding:0 16px;height:52px;flex-shrink:0;z-index:30}
+.bar .back{color:var(--muted);text-decoration:none;font-size:17px;padding:6px}
+.bar .name{font-family:var(--display);font-size:15.5px;font-weight:650;border-bottom:1px dashed transparent;cursor:text}
+.bar .name:hover{border-bottom-color:var(--muted)}
+.bar .tag{font-size:10.5px;font-weight:800;background:var(--teal-ghost);color:var(--teal);border-radius:8px;padding:2px 8px;letter-spacing:.04em}
+.seg{display:flex;background:var(--desk);border-radius:6px;padding:3px;margin-left:8px}
+.seg button{border:none;background:transparent;padding:5px 13px;font:700 12px var(--ui);color:var(--muted);border-radius:4px;cursor:pointer}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(22,26,28,.14)}
+.pages{display:flex;align-items:center;gap:4px;margin-left:auto}
+.pages span{font-size:11.5px;color:var(--muted);font-weight:700;margin-right:4px}
+.pages button{width:26px;height:26px;border-radius:5px;border:1px solid var(--line);background:#fff;font:700 12px var(--ui);color:var(--slate);cursor:pointer}
+.pages button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.saved{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11.5px;font-weight:700;margin:0 8px}
+.saved .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;border-radius:4px;padding:7px 14px;font:700 12.5px var(--ui);cursor:pointer;text-decoration:none}
+.btn.pri{background:var(--teal);color:#fff}
+.btn.sec{background:#fff;color:var(--teal);border-color:var(--teal)}
+.btn.ic{padding:7px 9px;color:var(--slate);border-color:var(--line);background:#fff}
+
+/* ───────── workspace ───────── */
+.work{flex:1;display:flex;min-height:0}
+.canvas{flex:1;overflow:auto;padding:34px 40px 80px;background:
+  radial-gradient(circle,#c8cdd0 1px,transparent 1px) 0 0/22px 22px,var(--desk);position:relative}
+.sheet{width:640px;margin:0 auto 30px;background:#fff;box-shadow:0 1px 2px rgba(22,26,28,.18),0 14px 38px rgba(22,26,28,.16);padding:34px 38px;position:relative;font-family:var(--doc);color:#111}
+.sheet .pageno{position:absolute;top:-24px;left:0;font:800 11px var(--ui);color:var(--muted);letter-spacing:.07em}
+
+/* document look */
+.hdr-tbl{display:flex;border:1.6px solid #111;font-size:10px}
+.hdr-tbl .c{padding:7px 9px;border-right:1.6px solid #111}
+.hdr-tbl .c:last-child{border-right:none}
+.logo-ph{width:84px;display:grid;place-items:center}
+.logo-ph .img{width:64px;height:40px;border-radius:4px;background:linear-gradient(120deg,#9ed4f0 0%,#f6c344 60%,#e2574c 100%);position:relative;overflow:hidden}
+.logo-ph .img:after{content:"Météo Burkina";position:absolute;inset:auto 0 2px;text-align:center;font:800 6.5px var(--ui);color:#14424e}
+.hdr-mid{flex:1;display:grid;place-items:center;text-align:center;font-weight:bold;font-size:12px;line-height:1.45}
+.hdr-ref{width:170px;font-size:8.8px;display:flex;flex-direction:column;justify-content:space-between;padding:0!important}
+.hdr-ref>div{padding:4px 8px;border-bottom:1.2px solid #111}
+.hdr-ref>div:last-child{border-bottom:none}
+.banner-row{margin-top:10px;background:linear-gradient(180deg,#e8e6e0,#d9d6cf);padding:9px 14px;display:flex;justify-content:space-between;font-size:8.6px;font-weight:bold}
+.issue-line{text-align:center;margin:13px 0 11px;font-size:11.5px;font-family:'Times New Roman',serif}
+.boxes{display:flex;gap:10px}
+.toc{width:34%;border:1.2px solid #111;font-size:8.6px}
+.toc .t{font-weight:bold;padding:4px 7px;border-bottom:1.2px solid #111;font-style:italic}
+.toc .r{display:flex;justify-content:space-between;padding:3.5px 7px;border-bottom:.8px solid #777}
+.toc .r:last-child{border-bottom:none}
+.hl{flex:1;background:#f2efe6;padding:8px 11px;font-size:9px;line-height:1.55}
+.hl .t{font-style:italic;font-weight:bold;color:#1f4e79;font-size:10.5px;margin-bottom:3px;font-family:'Times New Roman',serif}
+.cols2{display:flex;gap:14px;margin-top:13px}
+.cols2 .col{flex:1;min-width:0}
+.doc-h{color:#c0504d;text-decoration:underline;font-size:10.5px;font-weight:bold;margin-bottom:6px}
+.doc-p{font-size:9.3px;line-height:1.6;text-align:justify}
+.fig{margin-top:8px}
+.fig .map{border:.8px solid #999;display:block;width:100%}
+.fig .cap{font-size:8.2px;margin-top:3px;color:#222}
+.fig .cap b{font-weight:bold}
+
+/* legend strip in map svg handled inline */
+
+/* ───────── builder chrome over elements ───────── */
+.el{position:relative;border-radius:2px}
+.el:hover{outline:1.6px dashed #9fb6bb;outline-offset:3px;cursor:pointer}
+.el.sel{outline:2px solid var(--teal);outline-offset:3px}
+.el .tab{position:absolute;top:-22px;left:-3px;background:var(--teal);color:#fff;font:800 9.5px var(--ui);border-radius:3px 3px 0 0;padding:3px 8px;letter-spacing:.05em;display:none}
+.el.sel .tab{display:block}
+.el .tools{position:absolute;top:-26px;right:-3px;display:none;gap:1px;background:var(--ink);border-radius:5px;padding:3px}
+.el.sel .tools{display:flex}
+.el .tools button{border:none;background:transparent;color:#cfd8db;width:22px;height:20px;border-radius:3px;cursor:pointer;font-size:11px;line-height:1}
+.el .tools button:hover{background:rgba(255,255,255,.14);color:#fff}
+.el .meta-chip{position:absolute;bottom:-9px;right:6px;background:var(--ink);color:#fff;font:800 8.5px var(--ui);padding:2px 8px;border-radius:8px;letter-spacing:.03em}
+.ph-chip{display:inline-block;background:var(--teal-ghost);border:1px dashed var(--teal);color:var(--teal-dark);border-radius:3px;padding:0 5px;font:700 9px var(--ui)}
+
+/* insertion line + palette */
+.ins{position:relative;height:14px;margin:7px 0}
+.ins .ln{position:absolute;inset:6px 0 auto;height:2px;background:var(--teal);opacity:.85;border-radius:1px}
+.ins .plus{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:25px;height:25px;border-radius:50%;background:var(--teal);color:#fff;border:none;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,93,94,.45)}
+.palette{position:absolute;left:50%;top:24px;transform:translateX(-50%);width:372px;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:0 18px 48px rgba(22,26,28,.25);padding:13px;z-index:20;font-family:var(--ui)}
+.palette:before{content:"";position:absolute;top:-6px;left:50%;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;background:#fff;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+.palette .pt{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:2px 2px 9px}
+.palette .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.pi{border:1px solid var(--line);border-radius:7px;padding:11px 6px 9px;text-align:center;cursor:pointer;background:#fff}
+.pi:hover{border-color:var(--teal);background:var(--teal-ghost)}
+.pi .ic{font-size:17px;margin-bottom:5px;color:var(--slate)}
+.pi .lb{font-size:11px;font-weight:800;color:var(--ink)}
+.pi .de{font-size:9.5px;color:var(--muted);margin-top:1px}
+.pi.hot{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-ghost)}
+.row-struct{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.row-struct .rs{flex:1;display:flex;gap:2px;border:1px solid var(--line);border-radius:5px;padding:5px;cursor:pointer;height:30px}
+.row-struct .rs:hover{border-color:var(--teal)}
+.row-struct .rs div{background:var(--desk);border-radius:2px;flex:1}
+.row-struct .rs div.w2{flex:2}
+
+/* ───────── properties panel ───────── */
+.props{width:318px;background:#fff;border-left:1px solid var(--line);overflow-y:auto;flex-shrink:0}
+.props .ph{padding:15px 18px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.props .ph .ico{width:32px;height:32px;border-radius:7px;background:var(--teal-ghost);color:var(--teal);display:grid;place-items:center;font-size:15px}
+.props .ph b{font-size:14px}
+.props .ph .sub{font-size:11px;color:var(--muted)}
+.props .grp{padding:15px 18px;border-bottom:1px solid #eef1f2}
+.props .gt{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
+.f{margin-bottom:12px}.f:last-child{margin-bottom:0}
+.f label{display:block;font-size:11.5px;font-weight:800;margin-bottom:5px}
+.f select,.f input[type=text]{width:100%;border:1px solid var(--line);border-radius:4px;padding:8px 10px;font:600 12.5px var(--ui);color:var(--ink);background:#fff}
+.f .help{font-size:10.8px;color:var(--muted);margin-top:4px;line-height:1.45}
+.cascade .f{position:relative;padding-left:16px}
+.cascade .f:before{content:"";position:absolute;left:4px;top:-8px;bottom:18px;width:1.6px;background:var(--line)}
+.cascade .f:first-child:before{display:none}
+.cascade .f:after{content:"";position:absolute;left:4px;top:16px;width:9px;height:1.6px;background:var(--line)}
+.cascade .f:first-child:after{display:none}
+.cascade .f:first-child{padding-left:0}
+.prev{border:1px solid var(--line);border-radius:7px;overflow:hidden;background:#fbfcfc}
+.prev .cap{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;font-size:10.5px;color:var(--muted);font-weight:700;border-top:1px solid var(--line)}
+.prev .cap b{color:var(--ink)}
+.sw{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
+.sw .lb{font-size:12.5px;font-weight:700}
+.sw .de{font-size:10.5px;color:var(--muted)}
+.tg{width:34px;height:19px;border-radius:10px;background:#c4ccd0;position:relative;cursor:pointer;flex-shrink:0}
+.tg:after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.15s}
+.tg.on{background:var(--teal)}
+.tg.on:after{left:17px}
+.fignote{display:flex;gap:8px;background:var(--teal-ghost);border-radius:6px;padding:9px 11px;font-size:11px;color:var(--teal-dark);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="bar">
+    <a class="back" href="01-dashboard.html">←</a>
+    <span class="name">Bulletin Agrométéorologique Décadaire</span>
+    <span class="tag">TEMPLATE</span>
+    <div class="seg">
+      <button class="on">Corps</button>
+      <button>En-tête &amp; pied</button>
+    </div>
+    <div class="pages">
+      <span>PAGES</span>
+      <button class="on">1</button><button>2</button><button>3</button><button>4</button><button>＋</button>
+    </div>
+    <div class="saved"><span class="dot"></span>Enregistré · il y a 12 s</div>
+    <a class="btn sec" href="#">Aperçu PDF</a>
+    <a class="btn pri" href="#">Enregistrer</a>
+  </div>
+
+  <div class="work">
+
+    <!-- ════ canvas ════ -->
+    <div class="canvas">
+      <div class="sheet">
+        <div class="pageno">PAGE 1 / 4 — A4 PORTRAIT</div>
+
+        <!-- header row (from header band, shown locked in body mode) -->
+        <div class="el" title="Édité dans le mode En-tête & pied">
+          <div class="hdr-tbl">
+            <div class="c logo-ph"><div class="img"></div></div>
+            <div class="c hdr-mid">BULLETIN<br>AGROMETEOROLOGIQUE<br>DECADAIRE</div>
+            <div class="c hdr-ref">
+              <div>Réf : ANAM/PAM/PR_10/BN_01</div>
+              <div>Date : <span class="ph-chip">{date_du_numéro}</span></div>
+              <div>Page : <span class="ph-chip">{page}/{pages}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="el">
+          <div class="banner-row"><span>AGENCE NATIONALE DE LA METEOROLOGIE</span><span>BURKINA FASO<br>La Patrie ou la Mort, nous Vaincrons</span></div>
+        </div>
+
+        <!-- issue line element -->
+        <div class="el" style="margin-top:2px">
+          <p class="issue-line">N<sup>o</sup> <span class="ph-chip">{numéro}</span> période du <span class="ph-chip">{début_période}</span> au <span class="ph-chip">{fin_période}</span></p>
+        </div>
+
+        <!-- TOC + highlights -->
+        <div class="el">
+          <div class="boxes">
+            <div class="toc">
+              <div class="t">Dans ce numéro :</div>
+              <div class="r"><span>Situation pluviométrique</span><span>1</span></div>
+              <div class="r"><span>Situation agrométéorologique</span><span>2</span></div>
+              <div class="r"><span>Perspectives</span><span>3</span></div>
+              <div class="r"><span>Avis et conseils</span><span>3</span></div>
+            </div>
+            <div class="hl">
+              <div class="t">Sommaire :</div>
+              Zone de texte libre — points saillants du numéro, remplie à chaque parution…
+            </div>
+          </div>
+        </div>
+
+        <!-- insertion line + palette open -->
+        <div class="ins">
+          <div class="ln"></div>
+          <button class="plus">＋</button>
+          <div class="palette">
+            <div class="pt">Insérer un élément</div>
+            <div class="grid">
+              <div class="pi"><div class="ic">𝐓</div><div class="lb">Titre</div><div class="de">de section</div></div>
+              <div class="pi"><div class="ic">¶</div><div class="lb">Texte</div><div class="de">éditable par numéro</div></div>
+              <div class="pi"><div class="ic">{ }</div><div class="lb">Champ</div><div class="de">numéro, période…</div></div>
+              <div class="pi hot"><div class="ic">◈</div><div class="lb">Carte</div><div class="de">couche geomanager</div></div>
+              <div class="pi"><div class="ic">▣</div><div class="lb">Image</div><div class="de">logo, QR code</div></div>
+              <div class="pi"><div class="ic">▦</div><div class="lb">Encadré</div><div class="de">sommaire, alerte</div></div>
+              <div class="pi"><div class="ic">—</div><div class="lb">Séparateur</div><div class="de">filet / espace</div></div>
+              <div class="pi"><div class="ic">⤓</div><div class="lb">Saut de page</div><div class="de">forcer page suiv.</div></div>
+              <div class="pi"><div class="ic">⊞</div><div class="lb">Tableau</div><div class="de">données saisies</div></div>
+            </div>
+            <div class="row-struct">
+              <div class="rs" title="1 colonne"><div></div></div>
+              <div class="rs" title="2 colonnes"><div></div><div></div></div>
+              <div class="rs" title="1/3 - 2/3"><div></div><div class="w2"></div></div>
+              <div class="rs" title="3 colonnes"><div></div><div></div><div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-col body row -->
+        <div class="cols2">
+          <div class="col">
+            <div class="el">
+              <div class="doc-h">Situation pluviométrique</div>
+              <p class="doc-p">Zone de prose éditable à chaque numéro. Les hauteurs de pluie décadaires enregistrées ont varié de … mm à … mm. Les cumuls les plus importants ont concerné les régions …</p>
+            </div>
+          </div>
+          <div class="col">
+            <!-- SELECTED map element -->
+            <div class="el sel">
+              <div class="tab">CARTE · FIGURE 1</div>
+              <div class="tools">
+                <button title="Monter">↑</button><button title="Descendre">↓</button>
+                <button title="Dupliquer">⧉</button><button title="Supprimer">✕</button>
+              </div>
+              <div class="fig">
+                <svg class="map" viewBox="0 0 240 175" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="240" height="175" fill="#fdfdfc"/>
+                  <defs><clipPath id="bf1"><path d="M22,68 C26,50 42,38 62,31 C84,23 112,18 134,22 C156,26 176,31 188,45 C198,56 205,69 199,83 C193,95 181,99 174,111 C167,123 157,125 143,127 C133,139 117,146 103,141 C91,137 81,143 69,138 C55,132 41,124 33,112 C24,101 18,86 22,68 Z"/></clipPath></defs>
+                  <g clip-path="url(#bf1)">
+                    <rect width="240" height="175" fill="#eaf3fa"/>
+                    <ellipse cx="78" cy="120" rx="55" ry="36" fill="#2f6f9e"/>
+                    <ellipse cx="66" cy="128" rx="30" ry="20" fill="#1d4f78"/>
+                    <ellipse cx="150" cy="115" rx="44" ry="26" fill="#5d9ec6"/>
+                    <ellipse cx="160" cy="60" rx="50" ry="30" fill="#b8d7ea"/>
+                    <ellipse cx="80" cy="55" rx="45" ry="26" fill="#d4e6f3"/>
+                    <ellipse cx="120" cy="85" rx="35" ry="20" fill="#8abbdb"/>
+                  </g>
+                  <path d="M22,68 C26,50 42,38 62,31 C84,23 112,18 134,22 C156,26 176,31 188,45 C198,56 205,69 199,83 C193,95 181,99 174,111 C167,123 157,125 143,127 C133,139 117,146 103,141 C91,137 81,143 69,138 C55,132 41,124 33,112 C24,101 18,86 22,68 Z" fill="none" stroke="#444" stroke-width="1.4"/>
+                  <path d="M62,31 C70,55 65,80 75,105 M134,22 C125,50 132,82 122,110 M188,45 C165,60 150,62 122,68 M33,112 C60,100 85,108 103,118" fill="none" stroke="#666" stroke-width=".5" opacity=".7"/>
+                  <text x="10" y="14" font-family="Mulish" font-size="7" fill="#888">N ↑</text>
+                  <g font-family="Arial" font-size="6.4" fill="#333">
+                    <circle cx="118" cy="74" r="1.4"/><text x="122" y="76">OUAGADOUGOU</text>
+                    <circle cx="62" cy="112" r="1.4"/><text x="66" y="114">BOBO</text>
+                    <circle cx="172" cy="52" r="1.4"/><text x="176" y="54">DORI</text>
+                  </g>
+                  <g transform="translate(58,158)">
+                    <rect x="0" width="20" height="6" fill="#eaf3fa" stroke="#999" stroke-width=".4"/>
+                    <rect x="20" width="20" height="6" fill="#b8d7ea"/><rect x="40" width="20" height="6" fill="#8abbdb"/>
+                    <rect x="60" width="20" height="6" fill="#5d9ec6"/><rect x="80" width="20" height="6" fill="#2f6f9e"/><rect x="100" width="20" height="6" fill="#1d4f78"/>
+                    <g font-family="Arial" font-size="5.4" fill="#333"><text y="13" x="-2">0</text><text y="13" x="18">5</text><text y="13" x="37">25</text><text y="13" x="57">50</text><text y="13" x="77">80</text><text y="13" x="96">140</text></g>
+                    <text y="-3" x="40" font-family="Arial" font-size="5.6" fill="#333">Pluviométrie (mm)</text>
+                  </g>
+                </svg>
+                <p class="cap"><b>Figure 1 :</b> Cumul pluviométrique du <span class="ph-chip">{début_période}</span> au <span class="ph-chip">{fin_période}</span></p>
+              </div>
+              <div class="meta-chip">auto · dernier fichier ≤ fin de période</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /sheet 1 -->
+
+      <div class="sheet" style="height:300px;overflow:hidden">
+        <div class="pageno">PAGE 2 / 4</div>
+        <div class="hdr-tbl">
+          <div class="c logo-ph"><div class="img"></div></div>
+          <div class="c hdr-mid">BULLETIN<br>AGROMETEOROLOGIQUE<br>DECADAIRE</div>
+          <div class="c hdr-ref"><div>Réf : ANAM/PAM/PR_10/BN_01</div><div>Date : <span class="ph-chip">{date_du_numéro}</span></div><div>Page : <span class="ph-chip">{page}/{pages}</span></div></div>
+        </div>
+        <div class="cols2">
+          <div class="col"><div class="el"><div class="doc-h">Situation agrométéorologique</div><p class="doc-p">Zone de prose éditable à chaque numéro — évolution des températures moyennes…</p></div></div>
+          <div class="col"><div class="el"><div class="fig"><div style="height:120px;background:linear-gradient(135deg,#f5dcd3,#b03a2e 70%);border:.8px solid #999;border-radius:1px"></div><p class="cap"><b>Figure 4 :</b> Anomalie des températures moyennes</p></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ properties panel ════ -->
+    <aside class="props">
+      <div class="ph">
+        <div class="ico">◈</div>
+        <div>
+          <b>Carte geomanager</b>
+          <div class="sub">Figure 1 · page 1 · colonne droite</div>
+        </div>
+      </div>
+
+      <div class="grp cascade">
+        <div class="gt">Source de données</div>
+        <div class="f">
+          <label>Catégorie</label>
+          <select><option>Pluviométrie</option><option>Températures</option><option>Végétation</option></select>
+        </div>
+        <div class="f">
+          <label>Jeu de données</label>
+          <select><option>Cumul pluviométrique décadaire</option><option>Anomalie pluviométrique</option></select>
+        </div>
+        <div class="f">
+          <label>Couche</label>
+          <select><option>Cumul 10 jours — stations interpolées</option></select>
+          <div class="help">Couches raster uniquement (v1)</div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="gt">Aperçu</div>
+        <div class="prev">
+          <svg viewBox="0 0 240 150" style="display:block;width:100%" xmlns="http://www.w3.org/2000/svg">
+            <rect width="240" height="150" fill="#fdfdfc"/>
+            <defs><clipPath id="bf2"><path d="M22,60 C26,44 42,33 62,27 C84,20 112,16 134,19 C156,23 176,27 188,40 C198,49 205,61 199,73 C193,84 181,87 174,97 C167,108 157,110 143,112 C133,122 117,128 103,124 C91,120 81,125 69,121 C55,116 41,109 33,98 C24,88 18,76 22,60 Z"/></clipPath></defs>
+            <g clip-path="url(#bf2)">
+              <rect width="240" height="150" fill="#eaf3fa"/>
+              <ellipse cx="78" cy="105" rx="55" ry="32" fill="#2f6f9e"/>
+              <ellipse cx="66" cy="112" rx="30" ry="18" fill="#1d4f78"/>
+              <ellipse cx="150" cy="100" rx="44" ry="23" fill="#5d9ec6"/>
+              <ellipse cx="160" cy="52" rx="50" ry="27" fill="#b8d7ea"/>
+              <ellipse cx="80" cy="48" rx="45" ry="23" fill="#d4e6f3"/>
+            </g>
+            <path d="M22,60 C26,44 42,33 62,27 C84,20 112,16 134,19 C156,23 176,27 188,40 C198,49 205,61 199,73 C193,84 181,87 174,97 C167,108 157,110 143,112 C133,122 117,128 103,124 C91,120 81,125 69,121 C55,116 41,109 33,98 C24,88 18,76 22,60 Z" fill="none" stroke="#444" stroke-width="1.3"/>
+          </svg>
+          <div class="cap"><span>Dernier fichier disponible</span><b>28 mai 2026</b></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="gt">Date du fichier</div>
+        <div class="f">
+          <label>Stratégie de résolution</label>
+          <select>
+            <option>Dernier fichier ≤ fin de période (auto)</option>
+            <option>Dernier fichier ≤ date du numéro</option>
+            <option>Décalage fixe (N jours avant fin)</option>
+          </select>
+          <div class="help">À chaque numéro, la carte est générée avec le fichier correspondant à la période — modifiable au cas par cas.</div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="gt">Habillage</div>
+        <div class="sw"><div><div class="lb">Style de la couche</div><div class="de">palette définie dans geomanager</div></div><div class="tg on"></div></div>
+        <div class="sw"><div><div class="lb">Légende</div><div class="de">rendue sous la carte dans le PDF</div></div><div class="tg on"></div></div>
+        <div class="sw"><div><div class="lb">Contours administratifs</div><div class="de">limites régions + chefs-lieux</div></div><div class="tg on"></div></div>
+      </div>
+
+      <div class="grp">
+        <div class="gt">Légende de figure</div>
+        <div class="f">
+          <label>Texte</label>
+          <input type="text" value="Cumul pluviométrique du {début_période} au {fin_période}">
+        </div>
+        <div class="fignote">ℹ️ <span>La numérotation <b>Figure 1, 2, 3…</b> est automatique, dans l'ordre du document.</span></div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</body>
+</html>

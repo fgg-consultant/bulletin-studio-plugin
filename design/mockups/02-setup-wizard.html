@@ -1,0 +1,178 @@
+<!-- @dsCard group="Bulletin Studio" name="02 · Assistant de configuration" -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulletin Studio — Assistant de configuration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Mulish:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#007d7e; --teal-dark:#00595a; --teal-ghost:#e3f1f1;
+  --ink:#161a1c; --slate:#3e4c53; --muted:#69787f;
+  --desk:#f2f3f4; --line:#dee3e5; --card:#ffffff;
+  --amber:#b45309; --amber-bg:#fdf1e0;
+  --green:#1b7f4d; --green-bg:#e6f4ec;
+  --sidebar:#1d2a30;
+  --ui:"Mulish",sans-serif; --display:"Fraunces",serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ui);background:var(--desk);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+.shell{display:flex;min-height:100vh}
+.sb{width:200px;background:var(--sidebar);color:#bfd3d8;flex-shrink:0;display:flex;flex-direction:column;padding:14px 0}
+.sb .brand{display:flex;align-items:center;gap:10px;padding:4px 18px 18px;color:#fff}
+.sb .brand .w{width:30px;height:30px;border-radius:6px;background:var(--teal);display:grid;place-items:center;font-weight:800;color:#fff;font-size:15px}
+.sb .brand span{font-weight:700;font-size:13px;letter-spacing:.04em}
+.sb a{display:flex;align-items:center;gap:11px;padding:9px 18px;color:#aebfc5;text-decoration:none;font-size:13px;font-weight:600;border-left:3px solid transparent}
+.sb a svg{width:16px;height:16px;opacity:.75}
+.sb a.act{color:#fff;background:rgba(0,125,126,.28);border-left-color:var(--teal)}
+.sb .sep{height:1px;background:rgba(255,255,255,.08);margin:10px 18px}
+.sb .foot{margin-top:auto;padding:12px 18px;font-size:11px;color:#5f7077}
+
+main{flex:1;min-width:0}
+.hd{background:#fff;border-bottom:1px solid var(--line);padding:16px 36px;display:flex;align-items:center;gap:14px}
+.hd .back{color:var(--muted);text-decoration:none;font-size:18px;line-height:1}
+.hd h1{font-family:var(--display);font-weight:650;font-size:19px}
+.hd .crumb{color:var(--muted);font-size:12.5px}
+
+/* stepper */
+.stepper{display:flex;justify-content:center;gap:0;background:#fff;border-bottom:1px solid var(--line);padding:18px 0 22px}
+.step{display:flex;align-items:center;gap:10px;padding:0 26px;position:relative}
+.step .dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;border:2px solid var(--line);color:var(--muted);background:#fff}
+.step.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+.step.cur .dot{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 0 0 4px var(--teal-ghost)}
+.step .lb{font-size:12.5px;font-weight:700;color:var(--muted)}
+.step.cur .lb{color:var(--ink)}
+.step.done .lb{color:var(--green)}
+.step:not(:last-child):after{content:"";width:54px;height:2px;background:var(--line);margin-left:22px}
+.step.done:not(:last-child):after{background:var(--green)}
+
+.wrap{max-width:720px;margin:34px auto 60px;padding:0 24px}
+.lead{margin-bottom:22px}
+.lead h2{font-family:var(--display);font-size:23px;font-weight:650;letter-spacing:-.01em}
+.lead p{color:var(--muted);margin-top:6px;line-height:1.55;font-size:13.5px}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px;margin-bottom:16px}
+.opt{display:flex;gap:14px;padding:18px;border-radius:6px;cursor:pointer;border:2px solid transparent}
+.opt:hover{background:#fbfcfc}
+.opt.sel{border-color:var(--teal);background:var(--teal-ghost)}
+.opt input{margin-top:3px;accent-color:var(--teal);width:16px;height:16px}
+.opt .ti{font-weight:800;font-size:14px}
+.opt .de{color:var(--muted);font-size:12.5px;margin-top:3px;line-height:1.5}
+.opt .form{margin-top:14px;display:grid;gap:13px}
+.f label{display:block;font-size:12px;font-weight:800;letter-spacing:.02em;margin-bottom:5px}
+.f input[type=text],.f select{width:100%;border:1px solid var(--line);border-radius:4px;padding:9px 11px;font:600 13.5px var(--ui);color:var(--ink);background:#fff}
+.f input:focus,.f select:focus{outline:2px solid var(--teal);outline-offset:-1px;border-color:var(--teal)}
+.f .help{font-size:11.5px;color:var(--muted);margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+
+/* "will be created" summary */
+.willdo{background:#fbfcfc;border:1px dashed var(--line);border-radius:6px;padding:14px 16px;margin-top:4px}
+.willdo .t{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.willdo li{list-style:none;display:flex;gap:9px;align-items:baseline;padding:4px 0;font-size:13px}
+.willdo .tag{font-size:10.5px;font-weight:800;border-radius:8px;padding:1px 8px;flex-shrink:0;position:relative;top:-1px}
+.willdo .new{background:var(--teal-ghost);color:var(--teal)}
+.willdo .reuse{background:var(--green-bg);color:var(--green)}
+.willdo code{font-size:11.5px;background:var(--desk);border-radius:3px;padding:1px 5px;color:var(--slate)}
+
+.footer{display:flex;align-items:center;margin-top:26px}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;border-radius:4px;padding:10px 18px;font:700 13.5px var(--ui);cursor:pointer;text-decoration:none}
+.btn.pri{background:var(--teal);color:#fff}.btn.pri:hover{background:var(--teal-dark)}
+.btn.ghost{background:transparent;color:var(--slate);border-color:var(--line)}
+.footer .sp{flex:1}
+.footer .skip{color:var(--muted);font-size:12.5px;margin-right:18px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sb">
+    <div class="brand"><div class="w">W</div><span>climweb</span></div>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 6l6-4 6 4v8H9v-5H7v5H2z"/></svg>Pages</a>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="10" rx="1"/></svg>Images</a>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 1h6l3 3v11H4z"/></svg>Documents</a>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6"/></svg>Geomanager</a>
+    <div class="sep"></div>
+    <a href="#" class="act"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h7l3 3v11H3z"/></svg>Bulletin Studio</a>
+    <div class="foot">Maquette — chrome Wagtail simplifié</div>
+  </aside>
+
+  <main>
+    <div class="hd">
+      <a class="back" href="01-dashboard.html">←</a>
+      <h1>Assistant de configuration</h1>
+      <span class="crumb">Bulletin Studio / Configuration de la chaîne de publication</span>
+    </div>
+
+    <div class="stepper">
+      <div class="step done"><div class="dot">✓</div><div class="lb">Service</div></div>
+      <div class="step cur"><div class="dot">2</div><div class="lb">Produit</div></div>
+      <div class="step"><div class="dot">3</div><div class="lb">Emplacement</div></div>
+      <div class="step"><div class="dot">4</div><div class="lb">Récapitulatif</div></div>
+    </div>
+
+    <div class="wrap">
+      <div class="lead">
+        <h2>À quel produit climweb rattacher ce bulletin&nbsp;?</h2>
+        <p>Chaque numéro publié devient une page rattachée à un <b>produit</b>. L'assistant crée pour vous les
+        éléments techniques (snippet produit, catégorie, type d'élément) — sans passer par les écrans Wagtail.</p>
+      </div>
+
+      <div class="card">
+        <label class="opt">
+          <input type="radio" name="p">
+          <div style="flex:1">
+            <div class="ti">Réutiliser un produit existant</div>
+            <div class="de">2 produits trouvés sur cette plateforme</div>
+          </div>
+        </label>
+
+        <label class="opt sel">
+          <input type="radio" name="p" checked>
+          <div style="flex:1">
+            <div class="ti">Créer un nouveau produit</div>
+            <div class="de">Recommandé pour une nouvelle publication régulière</div>
+            <div class="form">
+              <div class="f">
+                <label>Nom du produit</label>
+                <input type="text" value="Bulletin Agrométéorologique Décadaire">
+              </div>
+              <div class="grid2">
+                <div class="f">
+                  <label>Résolution temporelle</label>
+                  <select><option>Décadaire (10 jours)</option><option>Mensuelle</option><option>Hebdomadaire</option><option>Journalière</option></select>
+                  <div class="help">Pré-remplit la périodicité des numéros</div>
+                </div>
+                <div class="f">
+                  <label>Validité d'un numéro</label>
+                  <select><option>10 jours</option><option>7 jours</option><option>30 jours</option></select>
+                  <div class="help">Durée d'affichage « en vigueur » sur le site</div>
+                </div>
+              </div>
+
+              <div class="willdo">
+                <div class="t">Sera créé automatiquement</div>
+                <ul>
+                  <li><span class="tag new">nouveau</span> Produit <code>Bulletin Agrométéorologique Décadaire</code></li>
+                  <li><span class="tag new">nouveau</span> Catégorie de produit <code>Bulletins</code> — format <code>pdf</code></li>
+                  <li><span class="tag new">nouveau</span> Type d'élément <code>Bulletin PDF</code> — validité 10 jours</li>
+                  <li><span class="tag reuse">réutilisé</span> Service <code>Agriculture</code> <span style="color:var(--muted);font-size:12px">(choisi à l'étape 1)</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <div class="footer">
+        <a class="btn ghost" href="#">← Retour</a>
+        <div class="sp"></div>
+        <span class="skip">Étape 2 sur 4</span>
+        <a class="btn pri" href="#">Continuer →</a>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

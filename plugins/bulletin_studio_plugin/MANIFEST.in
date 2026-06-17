@@ -1,0 +1,7 @@
+include README.md
+recursive-include src *.py
+recursive-include src *.html
+recursive-include src *.css
+recursive-include src *.js
+recursive-include src/bulletin_studio_plugin/static *
+recursive-include src/bulletin_studio_plugin/locale *

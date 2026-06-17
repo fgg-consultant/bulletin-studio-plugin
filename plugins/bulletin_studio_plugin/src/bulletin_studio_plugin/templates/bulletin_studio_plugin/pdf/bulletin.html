@@ -1,0 +1,38 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ template.language }}">
+<head>
+<meta charset="utf-8">
+<style>
+@page {
+  size: {{ template.page_size }} {{ template.orientation }};
+  margin: {{ margins_mm.0 }}mm {{ margins_mm.1 }}mm {{ margins_mm.2 }}mm {{ margins_mm.3 }}mm;
+  @top-center { content: element(page-header); }
+  @bottom-center { content: element(page-footer); }
+}
+{% include "bulletin_studio_plugin/pdf/bulletin.css" %}
+</style>
+</head>
+<body>
+
+{% if header_rows %}
+<header class="running-header">
+  {% include "bulletin_studio_plugin/pdf/_rows.html" with rows=header_rows %}
+</header>
+{% endif %}
+
+{% if footer_rows %}
+<footer class="running-footer">
+  {% include "bulletin_studio_plugin/pdf/_rows.html" with rows=footer_rows %}
+</footer>
+{% endif %}
+
+{% for section in sections %}
+<section class="{% if section.page_break_before %}page-break {% endif %}{% if section.columns_mode == 'flow-2col' %}flow-2col{% endif %}">
+  {% if section.columns_mode == 'flow-2col' %}<div class="cols">{% endif %}
+  {% include "bulletin_studio_plugin/pdf/_rows.html" with rows=section.rows %}
+  {% if section.columns_mode == 'flow-2col' %}</div>{% endif %}
+</section>
+{% endfor %}
+
+</body>
+</html>

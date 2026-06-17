@@ -1,0 +1,38 @@
+{% load i18n %}
+{% for row in rows %}
+<div class="row">
+  {% for col in row.columns %}
+  <div class="col" style="width: {{ col.width_pct }}%">
+    {% for el in col.elements %}
+      {% if el.type == "text" %}
+        <div class="el-text">{{ el.html|safe }}</div>
+      {% elif el.type == "title" %}
+        {% if el.level == 1 %}<h1>{{ el.text }}</h1>
+        {% elif el.level == 3 %}<h3>{{ el.text }}</h3>
+        {% else %}<h2>{{ el.text }}</h2>{% endif %}
+      {% elif el.type == "field" %}
+        <div class="el-field">{{ el.text }}</div>
+      {% elif el.type == "image" %}
+        <img class="el-image" src="{{ el.src }}" alt="{{ el.alt }}" style="width: {{ el.width_pct }}%">
+      {% elif el.type == "map" %}
+        <figure class="el-map">
+          <img src="{{ el.src }}" alt="{{ el.caption }}">
+          {% if el.legend and el.legend.items %}
+          <div class="legend">
+            {% for item in el.legend.items %}
+            <span class="legend-item"><span class="swatch" style="background: {{ item.color }}"></span>{{ item.name }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <figcaption><b>{% blocktrans with n=el.figure_number %}Figure {{ n }}{% endblocktrans %} :</b> {{ el.caption }}</figcaption>
+        </figure>
+      {% elif el.type == "spacer" %}
+        <div style="height: {{ el.height_mm }}mm"></div>
+      {% elif el.type == "divider" %}
+        <hr class="el-divider">
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}

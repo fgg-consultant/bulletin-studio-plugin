@@ -1,0 +1,303 @@
+<!-- @dsCard group="Bulletin Studio" name="04 · Remplissage d'un numéro" -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulletin Studio — Remplissage d'un numéro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Mulish:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#007d7e; --teal-dark:#00595a; --teal-ghost:#e3f1f1;
+  --ink:#161a1c; --slate:#3e4c53; --muted:#69787f;
+  --desk:#e9ebec; --line:#dee3e5;
+  --amber:#b45309; --amber-bg:#fdf1e0; --amber-line:#f3d9ae;
+  --green:#1b7f4d; --green-bg:#e6f4ec;
+  --sidebar:#1d2a30;
+  --ui:"Mulish",sans-serif; --display:"Fraunces",serif;
+  --doc:Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ui);background:var(--desk);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* top bar */
+.bar{display:flex;align-items:center;gap:13px;background:#fff;border-bottom:1px solid var(--line);padding:0 16px;height:52px;flex-shrink:0;z-index:30}
+.bar .back{color:var(--muted);text-decoration:none;font-size:17px;padding:6px}
+.bar .name{font-family:var(--display);font-size:15.5px;font-weight:650}
+.bar .sub{font-size:11.5px;color:var(--muted);font-weight:700}
+.st{display:inline-flex;align-items:center;gap:6px;border-radius:11px;padding:3px 10px;font-size:11px;font-weight:800;background:var(--desk);color:var(--muted)}
+.st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.saved{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11.5px;font-weight:700;margin-left:auto}
+.saved .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;border-radius:4px;padding:7px 14px;font:700 12.5px var(--ui);cursor:pointer;text-decoration:none}
+.btn.sec{background:#fff;color:var(--teal);border-color:var(--teal)}
+
+.work{flex:1;display:flex;min-height:0}
+.canvas{flex:1;overflow:auto;padding:34px 40px 80px;background:radial-gradient(circle,#c8cdd0 1px,transparent 1px) 0 0/22px 22px,var(--desk)}
+.sheet{width:640px;margin:0 auto 30px;background:#fff;box-shadow:0 1px 2px rgba(22,26,28,.18),0 14px 38px rgba(22,26,28,.16);padding:34px 38px;position:relative;font-family:var(--doc);color:#111}
+.sheet .pageno{position:absolute;top:-24px;left:0;font:800 11px var(--ui);color:var(--muted);letter-spacing:.07em}
+
+/* doc look (resolved values, no chips) */
+.hdr-tbl{display:flex;border:1.6px solid #111;font-size:10px}
+.hdr-tbl .c{padding:7px 9px;border-right:1.6px solid #111}
+.hdr-tbl .c:last-child{border-right:none}
+.logo-ph{width:84px;display:grid;place-items:center}
+.logo-ph .img{width:64px;height:40px;border-radius:4px;background:linear-gradient(120deg,#9ed4f0 0%,#f6c344 60%,#e2574c 100%);position:relative;overflow:hidden}
+.logo-ph .img:after{content:"Météo Burkina";position:absolute;inset:auto 0 2px;text-align:center;font:800 6.5px var(--ui);color:#14424e}
+.hdr-mid{flex:1;display:grid;place-items:center;text-align:center;font-weight:bold;font-size:12px;line-height:1.45}
+.hdr-ref{width:170px;font-size:8.8px;display:flex;flex-direction:column;justify-content:space-between;padding:0!important}
+.hdr-ref>div{padding:4px 8px;border-bottom:1.2px solid #111}
+.hdr-ref>div:last-child{border-bottom:none}
+.issue-line{text-align:center;margin:13px 0 11px;font-size:11.5px;font-family:'Times New Roman',serif}
+.boxes{display:flex;gap:10px}
+.toc{width:34%;border:1.2px solid #111;font-size:8.6px}
+.toc .t{font-weight:bold;padding:4px 7px;border-bottom:1.2px solid #111;font-style:italic}
+.toc .r{display:flex;justify-content:space-between;padding:3.5px 7px;border-bottom:.8px solid #777}
+.toc .r:last-child{border-bottom:none}
+.hl{flex:1;background:#f2efe6;padding:8px 11px;font-size:9px;line-height:1.55}
+.hl .t{font-style:italic;font-weight:bold;color:#1f4e79;font-size:10.5px;margin-bottom:3px;font-family:'Times New Roman',serif}
+.cols2{display:flex;gap:14px;margin-top:13px}
+.cols2 .col{flex:1;min-width:0}
+.doc-h{color:#c0504d;text-decoration:underline;font-size:10.5px;font-weight:bold;margin-bottom:6px}
+.doc-p{font-size:9.3px;line-height:1.6;text-align:justify}
+.fig .map{border:.8px solid #999;display:block;width:100%}
+.fig .cap{font-size:8.2px;margin-top:3px;color:#222}
+
+/* ── editable zones ── */
+.ez{position:relative;border-radius:2px}
+.ez.fillable{background:rgba(0,125,126,.045);outline:1.5px dashed rgba(0,125,126,.4);outline-offset:4px;cursor:text}
+.ez.fillable:hover{outline-color:var(--teal)}
+.ez.active{background:#fff;outline:2px solid var(--teal);outline-offset:4px;box-shadow:0 0 0 6px rgba(0,125,126,.1)}
+.ez .pencil{position:absolute;top:-9px;right:-7px;width:19px;height:19px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:9.5px}
+.ez.locked:hover{outline:1.5px solid #c4ccd0;outline-offset:4px}
+.ez.locked:hover:after{content:"Issu du template — modifier dans l'éditeur de template";position:absolute;top:-26px;left:0;background:var(--ink);color:#fff;font:700 9.5px var(--ui);padding:4px 9px;border-radius:4px;white-space:nowrap;z-index:5}
+.ez.empty .doc-p{color:#9aa7ad;font-style:italic}
+/* floating toolbar */
+.tb{position:absolute;top:-37px;left:0;display:flex;gap:1px;background:var(--ink);border-radius:6px;padding:3px;box-shadow:0 6px 18px rgba(22,26,28,.3);z-index:6}
+.tb button{border:none;background:transparent;color:#cfd8db;min-width:24px;height:23px;border-radius:4px;cursor:pointer;font-size:11.5px;font-family:Georgia,serif}
+.tb button:hover{background:rgba(255,255,255,.14);color:#fff}
+.tb button.on{background:var(--teal);color:#fff}
+.tb .sep{width:1px;background:rgba(255,255,255,.18);margin:3px 2px}
+.caret{display:inline-block;width:1.5px;height:11px;background:var(--teal);vertical-align:-2px;animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+/* resolved map chip */
+.mapchip{position:absolute;top:6px;right:6px;background:rgba(22,26,28,.85);color:#fff;font:800 8.5px var(--ui);padding:3px 8px;border-radius:9px;letter-spacing:.03em}
+.mapchip.ok:before{content:"● ";color:#5ad398}
+/* unresolved figure */
+.unres{border:1.6px dashed var(--amber);background:var(--amber-bg);border-radius:4px;padding:18px 14px;text-align:center;font-family:var(--ui)}
+.unres .ic{font-size:20px}
+.unres b{display:block;font-size:11.5px;margin-top:6px}
+.unres p{font-size:10px;color:#7c5a1e;margin-top:3px;line-height:1.5}
+.unres .acts{display:flex;gap:7px;justify-content:center;margin-top:10px}
+.unres .acts button{border:1px solid var(--amber);background:#fff;color:var(--amber);border-radius:4px;padding:5px 11px;font:700 10.5px var(--ui);cursor:pointer}
+.unres .acts button.f{background:var(--amber);color:#fff}
+
+/* ── right rail ── */
+.rail{width:300px;background:#fff;border-left:1px solid var(--line);overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
+.rail .grp{padding:15px 18px;border-bottom:1px solid #eef1f2}
+.rail .gt{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
+.f{margin-bottom:11px}.f:last-child{margin-bottom:0}
+.f label{display:block;font-size:11.5px;font-weight:800;margin-bottom:5px}
+.f input{width:100%;border:1px solid var(--line);border-radius:4px;padding:8px 10px;font:600 12.5px var(--ui);color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* progress */
+.prog .nums{display:flex;align-items:baseline;gap:6px}
+.prog .big{font-family:var(--display);font-size:26px;font-weight:650}
+.prog .lbl{font-size:12px;color:var(--muted);font-weight:700}
+.pbar{height:7px;border-radius:4px;background:var(--desk);margin-top:9px;overflow:hidden}
+.pbar div{width:67%;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--teal),#27a3a4)}
+/* figure list */
+.fl{list-style:none}
+.fl li{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12px;border-bottom:1px solid #f2f4f5}
+.fl li:last-child{border:none}
+.fl .ok{color:var(--green)}
+.fl .warn{color:var(--amber)}
+.fl b{font-weight:800}
+.fl .d{margin-left:auto;color:var(--muted);font-size:11px}
+.fl li.w{background:var(--amber-bg);margin:0 -8px;padding:7px 8px;border-radius:5px;border:none}
+/* generate CTA */
+.cta{margin-top:auto;padding:16px 18px;border-top:1px solid var(--line);background:#fbfcfc}
+.gen{width:100%;border:none;border-radius:5px;padding:13px;font:800 14px var(--ui);background:var(--teal);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;opacity:.55}
+.gen .spin{width:14px;height:14px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%}
+.blocknote{display:flex;gap:8px;background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:6px;padding:9px 11px;font-size:11px;color:#7c5a1e;line-height:1.5;margin-bottom:11px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="bar">
+    <a class="back" href="01-dashboard.html">←</a>
+    <div>
+      <div class="name">N° 15 — période du 21 au 31 mai 2026</div>
+      <div class="sub">Bulletin Agrométéorologique Décadaire</div>
+    </div>
+    <span class="st">Brouillon</span>
+    <div class="saved"><span class="dot"></span>Enregistré automatiquement</div>
+    <a class="btn sec" href="03-template-editor.html">Modifier le template</a>
+  </div>
+
+  <div class="work">
+
+    <!-- ════ A4 canvas — resolved issue ════ -->
+    <div class="canvas">
+      <div class="sheet">
+        <div class="pageno">PAGE 1 / 4</div>
+
+        <div class="ez locked">
+          <div class="hdr-tbl">
+            <div class="c logo-ph"><div class="img"></div></div>
+            <div class="c hdr-mid">BULLETIN<br>AGROMETEOROLOGIQUE<br>DECADAIRE</div>
+            <div class="c hdr-ref">
+              <div>Réf : ANAM/PAM/PR_10/BN_01</div>
+              <div>Date : 3 juin 2026</div>
+              <div>Page : <b>1/4</b></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="issue-line">N<sup>o</sup> 15 période du 21 au 31 mai 2026</p>
+
+        <div class="boxes">
+          <div class="toc">
+            <div class="t">Dans ce numéro :</div>
+            <div class="r"><span>Situation pluviométrique</span><span>1</span></div>
+            <div class="r"><span>Situation agrométéorologique</span><span>2</span></div>
+            <div class="r"><span>Perspectives</span><span>3</span></div>
+            <div class="r"><span>Avis et conseils</span><span>3</span></div>
+          </div>
+          <!-- editable highlights box, ACTIVE with toolbar -->
+          <div class="ez active hl" contenteditable="true">
+            <div class="tb">
+              <button class="on" style="font-weight:bold">B</button>
+              <button style="font-style:italic">I</button>
+              <div class="sep"></div>
+              <button>•≡</button>
+              <div class="sep"></div>
+              <button title="Annuler">↶</button>
+            </div>
+            <div class="t">Sommaire :</div>
+            - Manifestations pluvieuses et orageuses dans plusieurs localités du pays<br>
+            - Pluviométrie globalement déficitaire à normale par rapport à la décade de l'année passée<br>
+            - <b>Température moyenne en baisse importante</b><span class="caret"></span>
+          </div>
+        </div>
+
+        <div class="cols2">
+          <div class="col">
+            <!-- filled prose zone -->
+            <div class="ez fillable">
+              <span class="pencil">✎</span>
+              <div class="doc-h">Situation pluviométrique</div>
+              <p class="doc-p">Les hauteurs de pluie décadaires enregistrées ont varié de 0 mm dans certaines localités du pays à 136,8 mm en sept (7) jours de pluie à Loropéni (Poni). Les cumuls les plus importants ont concerné les régions du Guiriko, du Djôro et des Tannounyan (figure 1).</p>
+            </div>
+            <!-- empty prose zone -->
+            <div class="ez fillable empty" style="margin-top:12px">
+              <p class="doc-p">Rédigez l'analyse des cumuls saisonniers (comparaison avec l'année passée)…</p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="ez" style="position:relative">
+              <div class="fig">
+                <div style="position:relative">
+                  <span class="mapchip ok">FICHIER DU 28 MAI 2026</span>
+                  <svg class="map" viewBox="0 0 240 175" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="240" height="175" fill="#fdfdfc"/>
+                    <defs><clipPath id="bf3"><path d="M22,68 C26,50 42,38 62,31 C84,23 112,18 134,22 C156,26 176,31 188,45 C198,56 205,69 199,83 C193,95 181,99 174,111 C167,123 157,125 143,127 C133,139 117,146 103,141 C91,137 81,143 69,138 C55,132 41,124 33,112 C24,101 18,86 22,68 Z"/></clipPath></defs>
+                    <g clip-path="url(#bf3)">
+                      <rect width="240" height="175" fill="#eaf3fa"/>
+                      <ellipse cx="78" cy="120" rx="55" ry="36" fill="#2f6f9e"/>
+                      <ellipse cx="66" cy="128" rx="30" ry="20" fill="#1d4f78"/>
+                      <ellipse cx="150" cy="115" rx="44" ry="26" fill="#5d9ec6"/>
+                      <ellipse cx="160" cy="60" rx="50" ry="30" fill="#b8d7ea"/>
+                      <ellipse cx="80" cy="55" rx="45" ry="26" fill="#d4e6f3"/>
+                      <ellipse cx="120" cy="85" rx="35" ry="20" fill="#8abbdb"/>
+                    </g>
+                    <path d="M22,68 C26,50 42,38 62,31 C84,23 112,18 134,22 C156,26 176,31 188,45 C198,56 205,69 199,83 C193,95 181,99 174,111 C167,123 157,125 143,127 C133,139 117,146 103,141 C91,137 81,143 69,138 C55,132 41,124 33,112 C24,101 18,86 22,68 Z" fill="none" stroke="#444" stroke-width="1.4"/>
+                    <g transform="translate(58,158)">
+                      <rect x="0" width="20" height="6" fill="#eaf3fa" stroke="#999" stroke-width=".4"/>
+                      <rect x="20" width="20" height="6" fill="#b8d7ea"/><rect x="40" width="20" height="6" fill="#8abbdb"/>
+                      <rect x="60" width="20" height="6" fill="#5d9ec6"/><rect x="80" width="20" height="6" fill="#2f6f9e"/><rect x="100" width="20" height="6" fill="#1d4f78"/>
+                      <g font-family="Arial" font-size="5.4" fill="#333"><text y="13" x="-2">0</text><text y="13" x="18">5</text><text y="13" x="37">25</text><text y="13" x="57">50</text><text y="13" x="77">80</text><text y="13" x="96">140</text></g>
+                      <text y="-3" x="40" font-family="Arial" font-size="5.6" fill="#333">Pluviométrie (mm)</text>
+                    </g>
+                  </svg>
+                </div>
+                <p class="cap"><b>Figure 1 :</b> Cumul pluviométrique du 21 au 31 mai 2026</p>
+              </div>
+            </div>
+
+            <!-- unresolved figure -->
+            <div class="ez" style="margin-top:12px">
+              <div class="unres">
+                <div class="ic">⚠️</div>
+                <b>Figure 2 impossible à résoudre</b>
+                <p>Aucun fichier « Anomalie pluviométrique » daté du 31 mai 2026 ou avant.<br>Dernier fichier connu : <b>20 mai 2026</b>.</p>
+                <div class="acts">
+                  <button class="f">Utiliser le 20 mai</button>
+                  <button>Choisir une date…</button>
+                  <button>Masquer la figure</button>
+                </div>
+              </div>
+              <p class="cap" style="margin-top:3px"><b>Figure 2 :</b> Anomalie cumul pluviométrique par rapport à 2025</p>
+            </div>
+          </div>
+        </div>
+      </div><!-- /sheet -->
+
+      <div class="sheet" style="height:220px;overflow:hidden">
+        <div class="pageno">PAGE 2 / 4</div>
+        <div class="hdr-tbl">
+          <div class="c logo-ph"><div class="img"></div></div>
+          <div class="c hdr-mid">BULLETIN<br>AGROMETEOROLOGIQUE<br>DECADAIRE</div>
+          <div class="c hdr-ref"><div>Réf : ANAM/PAM/PR_10/BN_01</div><div>Date : 3 juin 2026</div><div>Page : <b>2/4</b></div></div>
+        </div>
+        <div class="cols2">
+          <div class="col"><div class="ez fillable empty"><p class="doc-p">Rédigez l'évolution de la température moyenne…</p></div></div>
+          <div class="col"><div class="ez"><div class="fig"><div style="position:relative"><span class="mapchip ok">FICHIER DU 31 MAI 2026</span><div style="height:90px;background:linear-gradient(135deg,#dbe9f5,#1d4f78 75%);border:.8px solid #999"></div></div><p class="cap"><b>Figure 4 :</b> Anomalie des températures moyennes</p></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ right rail ════ -->
+    <aside class="rail">
+      <div class="grp">
+        <div class="gt">Ce numéro</div>
+        <div class="f"><label>Numéro</label><input value="15"></div>
+        <div class="grid2">
+          <div class="f"><label>Début de période</label><input value="21/05/2026"></div>
+          <div class="f"><label>Fin de période</label><input value="31/05/2026"></div>
+        </div>
+        <div class="f"><label>Date du numéro</label><input value="03/06/2026"></div>
+      </div>
+
+      <div class="grp prog">
+        <div class="gt">Avancement de la saisie</div>
+        <div class="nums"><span class="big">4 / 6</span><span class="lbl">zones de texte remplies</span></div>
+        <div class="pbar"><div></div></div>
+      </div>
+
+      <div class="grp">
+        <div class="gt">Figures (7)</div>
+        <ul class="fl">
+          <li><span class="ok">✓</span><b>Fig. 1</b> Cumul pluviométrique<span class="d">28 mai</span></li>
+          <li class="w"><span class="warn">⚠</span><b>Fig. 2</b> Anomalie / 2025<span class="d">non résolue</span></li>
+          <li><span class="ok">✓</span><b>Fig. 3</b> Anomalie / moyenne<span class="d">28 mai</span></li>
+          <li><span class="ok">✓</span><b>Fig. 4</b> Anomalie températures<span class="d">31 mai</span></li>
+          <li><span class="ok">✓</span><b>Fig. 5</b> Anomalie humidité<span class="d">31 mai</span></li>
+          <li><span class="ok">✓</span><b>Fig. 6</b> Anomalie NDVI<span class="d">25 mai</span></li>
+          <li><span class="ok">✓</span><b>Fig. 7</b> Prévision cumuls<span class="d">2 juin</span></li>
+        </ul>
+      </div>
+
+      <div class="cta">
+        <div class="blocknote">⚠ <span><b>1 figure non résolue</b> et <b>2 zones vides</b> — à traiter avant de générer le PDF.</span></div>
+        <button class="gen" disabled><span class="spin" style="display:none"></span>Générer le PDF</button>
+      </div>
+    </aside>
+
+  </div>
+</div>
+</body>
+</html>

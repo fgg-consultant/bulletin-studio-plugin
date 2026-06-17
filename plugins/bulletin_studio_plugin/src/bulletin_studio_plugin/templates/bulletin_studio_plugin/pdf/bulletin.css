@@ -1,0 +1,47 @@
+/* Shared print stylesheet — used by weasyprint AND (later) the editor's A4 preview,
+   so the on-screen canvas matches the PDF by construction.
+   weasyprint 65: flexbox is reliable, CSS grid is not — rows use flex. */
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.5;
+  color: #111;
+}
+
+/* running header/footer (GCPM running elements) */
+.running-header { position: running(page-header); }
+.running-footer { position: running(page-footer); }
+.pageno::after { content: counter(page) "/" counter(pages); }
+
+/* builder grid: rows of flex columns */
+.row { display: flex; gap: 4mm; }
+.row + .row { margin-top: 3mm; }
+.col { min-width: 0; }
+
+/* optional flowing 2-column body mode */
+.flow-2col .cols { columns: 2; column-gap: 6mm; }
+
+.page-break { break-before: page; }
+
+h1 { font-size: 14pt; margin: 0 0 3mm; }
+h2 { font-size: 11.5pt; margin: 0 0 2.5mm; }
+h3 { font-size: 10pt; margin: 0 0 2mm; }
+
+.el-text p { margin: 0 0 2mm; text-align: justify; }
+.el-text ul, .el-text ol { margin: 0 0 2mm; padding-left: 5mm; }
+.el-field { font-size: 10.5pt; text-align: center; margin: 2mm 0; }
+.el-image { display: block; }
+.el-divider { border: none; border-top: 0.4mm solid #333; margin: 3mm 0; }
+
+/* map figures */
+figure.el-map { margin: 0 0 3mm; break-inside: avoid; }
+figure.el-map img { width: 100%; border: 0.2mm solid #999; }
+figure.el-map figcaption { font-size: 7.5pt; margin-top: 1mm; color: #222; }
+
+.legend { margin-top: 1mm; }
+.legend-item { display: inline-block; font-size: 7pt; margin-right: 3mm; }
+.legend-item .swatch {
+  display: inline-block; width: 3mm; height: 3mm;
+  margin-right: 1mm; vertical-align: -0.5mm; border: 0.1mm solid #777;
+}

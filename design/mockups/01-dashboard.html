@@ -1,0 +1,286 @@
+<!-- @dsCard group="Bulletin Studio" name="01 · Dashboard" -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulletin Studio — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Mulish:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#007d7e; --teal-dark:#00595a; --teal-ghost:#e3f1f1;
+  --ink:#161a1c; --slate:#3e4c53; --muted:#69787f;
+  --desk:#f2f3f4; --line:#dee3e5; --card:#ffffff;
+  --amber:#b45309; --amber-bg:#fdf1e0; --amber-line:#f3d9ae;
+  --green:#1b7f4d; --green-bg:#e6f4ec;
+  --blue:#1d6fa5; --blue-bg:#e8f1f8;
+  --sidebar:#1d2a30;
+  --ui:"Mulish",sans-serif; --display:"Fraunces",serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ui);background:var(--desk);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+.shell{display:flex;min-height:100vh}
+
+/* ───────── Wagtail sidebar (simplified chrome) ───────── */
+.sb{width:200px;background:var(--sidebar);color:#bfd3d8;flex-shrink:0;display:flex;flex-direction:column;padding:14px 0}
+.sb .brand{display:flex;align-items:center;gap:10px;padding:4px 18px 18px;color:#fff}
+.sb .brand .w{width:30px;height:30px;border-radius:6px;background:var(--teal);display:grid;place-items:center;font-weight:800;color:#fff;font-size:15px}
+.sb .brand span{font-weight:700;font-size:13px;letter-spacing:.04em}
+.sb a{display:flex;align-items:center;gap:11px;padding:9px 18px;color:#aebfc5;text-decoration:none;font-size:13px;font-weight:600;border-left:3px solid transparent}
+.sb a svg{width:16px;height:16px;flex-shrink:0;opacity:.75}
+.sb a:hover{color:#fff;background:rgba(255,255,255,.04)}
+.sb a.act{color:#fff;background:rgba(0,125,126,.28);border-left-color:var(--teal)}
+.sb .sep{height:1px;background:rgba(255,255,255,.08);margin:10px 18px}
+.sb .foot{margin-top:auto;padding:12px 18px;font-size:11px;color:#5f7077}
+
+/* ───────── Header band ───────── */
+main{flex:1;min-width:0}
+.hd{background:#fff;border-bottom:1px solid var(--line);padding:22px 36px 0}
+.hd .top{display:flex;align-items:center;gap:14px}
+.hd .ic{width:38px;height:38px;border-radius:9px;background:var(--teal-ghost);display:grid;place-items:center;color:var(--teal)}
+.hd h1{font-family:var(--display);font-weight:650;font-size:25px;letter-spacing:-.01em}
+.hd .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.hd .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;border-radius:4px;padding:8px 15px;font:600 13px var(--ui);cursor:pointer;text-decoration:none}
+.btn.pri{background:var(--teal);color:#fff}.btn.pri:hover{background:var(--teal-dark)}
+.btn.sec{background:#fff;color:var(--teal);border-color:var(--teal)}
+.btn.ghost{background:transparent;color:var(--slate);border-color:var(--line)}
+.tabs{display:flex;gap:26px;margin-top:18px}
+.tabs a{padding:10px 2px;color:var(--muted);text-decoration:none;font-weight:700;font-size:13.5px;border-bottom:3px solid transparent}
+.tabs a.act{color:var(--teal);border-bottom-color:var(--teal)}
+.tabs a .n{background:var(--desk);border-radius:9px;padding:1px 7px;font-size:11px;margin-left:5px;color:var(--slate)}
+
+.wrap{padding:26px 36px 48px;max-width:1240px}
+
+/* ───────── Setup banner ───────── */
+.banner{display:flex;align-items:center;gap:14px;background:var(--amber-bg);border:1px solid var(--amber-line);border-left:4px solid var(--amber);border-radius:6px;padding:13px 18px;margin-bottom:28px}
+.banner .bi{width:30px;height:30px;border-radius:50%;background:#fff;display:grid;place-items:center;color:var(--amber);flex-shrink:0}
+.banner b{display:block;font-size:13.5px}
+.banner p{color:#7c5a1e;font-size:12.5px;margin-top:1px}
+.banner .btn{margin-left:auto;background:var(--amber);color:#fff;flex-shrink:0}
+
+/* ───────── Section titles ───────── */
+.sect{display:flex;align-items:baseline;gap:10px;margin:0 0 14px}
+.sect h2{font-family:var(--display);font-size:17px;font-weight:650}
+.sect .hint{color:var(--muted);font-size:12px}
+.sect .lk{margin-left:auto;color:var(--teal);font-weight:700;font-size:12.5px;text-decoration:none}
+
+/* ───────── Template cards ───────── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px;margin-bottom:38px}
+.tc{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;transition:box-shadow .15s}
+.tc:hover{box-shadow:0 6px 22px rgba(22,26,28,.09)}
+.tc .body{display:flex;gap:16px;padding:16px}
+/* micro A4 thumbnail */
+.thumb{width:92px;height:128px;background:#fff;border:1px solid var(--line);border-radius:2px;box-shadow:2px 3px 0 rgba(22,26,28,.06);flex-shrink:0;padding:7px;display:flex;flex-direction:column;gap:3px;position:relative}
+.thumb .hrow{display:flex;gap:2px}
+.thumb .cell{background:#eef1f2;border-radius:1px}
+.thumb .logo{width:16px;height:12px;background:linear-gradient(120deg,#7cc4e8,#f6c344)}
+.thumb .t1{flex:1;height:12px}
+.thumb .t2{width:18px;height:12px}
+.thumb .line{height:3px;background:#e4e8ea;border-radius:1px}
+.thumb .line.w60{width:60%}
+.thumb .cols{display:flex;gap:3px;flex:1}
+.thumb .cols>div{flex:1;display:flex;flex-direction:column;gap:3px}
+.thumb .map{height:34px;background:linear-gradient(135deg,#cfe5f2 0%,#7db8d9 55%,#2f6f9e 100%);border-radius:2px;position:relative}
+.thumb .map:after{content:"";position:absolute;inset:auto 3px 3px auto;width:18px;height:3px;background:linear-gradient(90deg,#f5e9c8,#d96f32,#8c2d04);border-radius:1px}
+.thumb .badge{position:absolute;top:-7px;right:-7px;background:var(--ink);color:#fff;font-size:9px;font-weight:800;border-radius:8px;padding:2px 6px}
+.tc h3{font-size:14.5px;font-weight:800;line-height:1.3}
+.tc .meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--desk);border-radius:10px;padding:2px 9px;font-size:11px;font-weight:700;color:var(--slate)}
+.chip.t{background:var(--teal-ghost);color:var(--teal)}
+.tc .last{margin-top:10px;font-size:12px;color:var(--muted)}
+.tc .last b{color:var(--ink)}
+.tc .foot{display:flex;gap:8px;border-top:1px solid var(--line);padding:10px 16px;background:#fbfcfc}
+.tc .foot .btn{padding:6px 12px;font-size:12.5px}
+.tc .foot .more{margin-left:auto;color:var(--muted);border:none;background:none;font-size:17px;cursor:pointer;letter-spacing:1px}
+.tc.new{border-style:dashed;display:grid;place-items:center;min-height:212px;color:var(--muted);cursor:pointer;background:transparent}
+.tc.new:hover{color:var(--teal);border-color:var(--teal)}
+.tc.new .plus{width:40px;height:40px;border-radius:50%;border:2px dashed currentColor;display:grid;place-items:center;font-size:22px;margin:0 auto 10px}
+.tc.new p{font-weight:700}
+
+/* ───────── Issues table ───────── */
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+thead th{text-align:left;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:11px 16px;border-bottom:1px solid var(--line);background:#fbfcfc}
+tbody td{padding:13px 16px;border-bottom:1px solid #edf0f1;font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafcfc}
+td .ref{font-weight:800}
+td .tpl{color:var(--muted);font-size:12px;margin-top:1px}
+.st{display:inline-flex;align-items:center;gap:6px;border-radius:11px;padding:3px 10px;font-size:11.5px;font-weight:800}
+.st:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.pub{background:var(--green-bg);color:var(--green)}
+.st.gen{background:var(--blue-bg);color:var(--blue)}
+.st.dr{background:var(--desk);color:var(--muted)}
+td .acts{display:flex;gap:6px;justify-content:flex-end}
+td .acts a{color:var(--teal);font-weight:700;font-size:12.5px;text-decoration:none;padding:5px 9px;border-radius:4px}
+td .acts a:hover{background:var(--teal-ghost)}
+.note{margin-top:26px;font-size:11.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sb">
+    <div class="brand"><div class="w">W</div><span>climweb</span></div>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 6l6-4 6 4v8H9v-5H7v5H2z"/></svg>Pages</a>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="12" height="10" rx="1"/></svg>Images</a>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 1h6l3 3v11H4z"/></svg>Documents</a>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6"/></svg>Geomanager</a>
+    <div class="sep"></div>
+    <a href="#" class="act"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h7l3 3v11H3zm3 6h6M6 9h6M6 11h4" stroke="currentColor"/></svg>Bulletin Studio</a>
+    <div class="sep"></div>
+    <a href="#"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 5a3 3 0 110 6 3 3 0 010-6z"/></svg>Réglages</a>
+    <div class="foot">Maquette — chrome Wagtail simplifié</div>
+  </aside>
+
+  <main>
+    <div class="hd">
+      <div class="top">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 2h8l3 3v13H5z"/><path d="M8 9h6M8 12h6M8 15h4"/></svg></div>
+        <div>
+          <h1>Bulletin Studio</h1>
+          <div class="sub">Concevez, remplissez et publiez vos bulletins PDF</div>
+        </div>
+        <div class="sp"></div>
+        <a class="btn ghost" href="02-setup-wizard.html">Assistant de configuration</a>
+        <a class="btn pri" href="03-template-editor.html">＋ Nouveau template</a>
+      </div>
+      <nav class="tabs">
+        <a class="act" href="#">Templates <span class="n">2</span></a>
+        <a href="#">Numéros <span class="n">17</span></a>
+        <a href="#">Réglages</a>
+      </nav>
+    </div>
+
+    <div class="wrap">
+
+      <div class="banner">
+        <div class="bi"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l7 13H1z"/><rect x="7.3" y="6" width="1.4" height="4" fill="#fff"/><rect x="7.3" y="11" width="1.4" height="1.4" fill="#fff"/></svg></div>
+        <div>
+          <b>La chaîne de publication n'est pas entièrement configurée</b>
+          <p>Le template « Bulletin Climatique Mensuel » n'est relié à aucun produit climweb. Les numéros ne pourront pas être publiés.</p>
+        </div>
+        <a class="btn" href="02-setup-wizard.html">Lancer l'assistant</a>
+      </div>
+
+      <div class="sect">
+        <h2>Templates de bulletin</h2>
+        <span class="hint">la maquette réutilisable de chaque publication</span>
+      </div>
+
+      <div class="cards">
+
+        <div class="tc">
+          <div class="body">
+            <div class="thumb">
+              <span class="badge">A4</span>
+              <div class="hrow"><div class="cell logo"></div><div class="cell t1"></div><div class="cell t2"></div></div>
+              <div class="line"></div><div class="line w60"></div>
+              <div class="cols">
+                <div><div class="line"></div><div class="line"></div><div class="map"></div><div class="line w60"></div></div>
+                <div><div class="line"></div><div class="map"></div><div class="line"></div><div class="line w60"></div></div>
+              </div>
+            </div>
+            <div>
+              <h3>Bulletin Agrométéorologique Décadaire</h3>
+              <div class="meta">
+                <span class="chip">4 pages</span>
+                <span class="chip">7 figures carte</span>
+                <span class="chip t">✓ chaîne reliée</span>
+              </div>
+              <div class="last">Dernier numéro : <b>No 15 — 21 au 31 mai 2026</b><br>publié il y a 9 jours</div>
+            </div>
+          </div>
+          <div class="foot">
+            <a class="btn pri" href="04-issue-fill.html">＋ Nouveau numéro</a>
+            <a class="btn ghost" href="03-template-editor.html">Modifier le template</a>
+            <button class="more">⋯</button>
+          </div>
+        </div>
+
+        <div class="tc">
+          <div class="body">
+            <div class="thumb">
+              <span class="badge">A4</span>
+              <div class="hrow"><div class="cell logo"></div><div class="cell t1"></div><div class="cell t2"></div></div>
+              <div class="line"></div>
+              <div class="cols">
+                <div><div class="map"></div><div class="line"></div><div class="line"></div><div class="line w60"></div></div>
+              </div>
+              <div class="line"></div><div class="line w60"></div>
+            </div>
+            <div>
+              <h3>Bulletin Climatique Mensuel</h3>
+              <div class="meta">
+                <span class="chip">2 pages</span>
+                <span class="chip">3 figures carte</span>
+                <span class="chip" style="background:var(--amber-bg);color:var(--amber)">⚠ chaîne incomplète</span>
+              </div>
+              <div class="last">Dernier numéro : <b>Avril 2026</b><br>brouillon, jamais publié</div>
+            </div>
+          </div>
+          <div class="foot">
+            <a class="btn pri" href="04-issue-fill.html">＋ Nouveau numéro</a>
+            <a class="btn ghost" href="03-template-editor.html">Modifier le template</a>
+            <button class="more">⋯</button>
+          </div>
+        </div>
+
+        <div class="tc new">
+          <div>
+            <div class="plus">＋</div>
+            <p>Nouveau template</p>
+            <span style="font-size:12px">vierge ou à partir d'un modèle</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h2>Numéros récents</h2>
+        <a class="lk" href="#">Tous les numéros →</a>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th style="width:34%">Numéro</th><th>Période</th><th>Statut</th><th>Mis à jour</th><th style="text-align:right">Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="ref">No 15 — Bulletin Agrométéorologique Décadaire</div><div class="tpl">période du 21 au 31 mai 2026</div></td>
+            <td>21 mai → 31 mai 2026</td>
+            <td><span class="st pub">Publié</span></td>
+            <td>3 juin 2026</td>
+            <td><div class="acts"><a href="#">Voir la page</a><a href="#">PDF</a></div></td>
+          </tr>
+          <tr>
+            <td><div class="ref">No 14 — Bulletin Agrométéorologique Décadaire</div><div class="tpl">période du 11 au 20 mai 2026</div></td>
+            <td>11 mai → 20 mai 2026</td>
+            <td><span class="st pub">Publié</span></td>
+            <td>23 mai 2026</td>
+            <td><div class="acts"><a href="#">Voir la page</a><a href="#">PDF</a></div></td>
+          </tr>
+          <tr>
+            <td><div class="ref">Avril 2026 — Bulletin Climatique Mensuel</div><div class="tpl">brouillon</div></td>
+            <td>1 avril → 30 avril 2026</td>
+            <td><span class="st gen">PDF généré</span></td>
+            <td>12 mai 2026</td>
+            <td><div class="acts"><a href="05-issue-publish.html">Reprendre</a><a href="#">PDF</a></div></td>
+          </tr>
+          <tr>
+            <td><div class="ref">No 16 — Bulletin Agrométéorologique Décadaire</div><div class="tpl">période du 1 au 10 juin 2026</div></td>
+            <td>1 juin → 10 juin 2026</td>
+            <td><span class="st dr">Brouillon</span></td>
+            <td>il y a 2 heures</td>
+            <td><div class="acts"><a href="04-issue-fill.html">Continuer la saisie</a></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="note">Les numéros publiés créent automatiquement une page « Product Item » sous la page produit climweb correspondante, avec le PDF attaché et sa vignette générée.</p>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>

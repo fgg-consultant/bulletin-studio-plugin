@@ -1,0 +1,9 @@
+-r base.in
+flake8==7.0.0
+pip-tools==7.5.3
+# build is used to compile a wheel package with `python -m build .` command.
+build
+# pkg_resources was removed in setuptools 81+, but climweb's venv still needs it
+# (bulma imports pkg_resources at startup). Keep setuptools below 81, and do not
+# compile this file with --allow-unsafe.
+setuptools<81

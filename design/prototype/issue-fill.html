@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulletin Studio — Remplissage d'un numéro (prototype)</title>
+<link rel="stylesheet" href="studio.css">
+</head>
+<body>
+<div class="app mode-issue">
+
+  <div class="bar">
+    <a class="back" href="index.html" title="Retour">←</a>
+    <div class="titleblock">
+      <div class="name" id="issueTitle">N° 15 — période du 21 au 31 mai 2026</div>
+      <div class="sub">Bulletin Agrométéorologique Décadaire</div>
+    </div>
+    <span class="tag draft" id="statusTag">Brouillon</span>
+    <div class="saved" id="saved" style="margin-left:auto"><span class="dot"></span>Enregistré automatiquement</div>
+    <a class="btn sec" href="template-editor.html">Modifier le template</a>
+  </div>
+
+  <div class="work">
+    <div class="canvas" id="canvas"></div>
+
+    <aside class="rail" id="rail"></aside>
+  </div>
+
+  <div class="hintbar">
+    Prototype front — données mockées. <b>Cliquez</b> une zone pointillée pour <b>écrire</b> (gras/italique/liste) · une figure <b>non résolue</b> se règle dans la carte ou le rail · modifiez la <b>période</b> pour relancer la résolution des cartes.
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="a4.js"></script>
+<script>
+(function () {
+  "use strict";
+  const D = window.STUDIO_DATA, A4 = window.A4;
+  const $ = (s, r) => (r || document).querySelector(s);
+
+  // ── state: a fresh template + an issue with prefilled content ─────────
+  const state = D.sampleTemplate();
+  const issue = {
+    issue_number: D.SAMPLE_ISSUE.issue_number, issue_date: D.SAMPLE_ISSUE.issue_date,
+    period_start: D.SAMPLE_ISSUE.period_start, period_end: D.SAMPLE_ISSUE.period_end,
+  };
+  const content = {};   // element_id -> { html, time, skip }
+
+  // map prefill onto the template's editable element ids (document order)
+  (function seed() {
+    let textCount = 0;
+    state.pages.forEach((pg) => pg.sections.forEach((sec) => (sec.rows || []).forEach((row) =>
+      (row.columns || []).forEach((col) => (col.elements || []).forEach((el) => {
+        if (el.type === "box" && el.variant === "highlights") content[el.id] = { html: D.SAMPLE_ISSUE.prefill.highlights };
+        else if (el.type === "text" && el.editable) {
+          textCount++;
+          if (textCount === 1) content[el.id] = { html: "<p>" + D.SAMPLE_ISSUE.prefill.pluvio1 + "</p>" };
+        }
+      })))));
+  })();
+
+  // ── map resolution ────────────────────────────────────────────────────
+  function latestBefore(timestamps, anchor) {
+    let best = null;
+    timestamps.forEach((t) => { if (t <= anchor && (!best || t > best)) best = t; });
+    return best;
+  }
+  function resolveMapIssue(el) {
+    const layer = D.LAYER_INDEX[el.layer_id];
+    const ov = content[el.id] || {};
+    if (ov.skip) return { kind: "skipped" };
+    if (!layer) return { kind: "unresolved", message: "Couche introuvable" };
+    const anchor = issue.period_end || issue.issue_date;
+    const time = ov.time || latestBefore(layer.timestamps, anchor);
+    if (!time) {
+      return { kind: "unresolved",
+        message: `Aucun fichier daté du ${D.frDate(anchor)} ou avant pour « ${layer.title} ».`,
+        lastKnown: null, layerId: el.layer_id };
+    }
+    return { kind: "resolved", dateLabel: time,
+      svg: D.mapSVG(layer, { legend: el.show_legend !== false, boundaries: el.show_boundaries !== false }) };
+  }
+
+  // ── render ───────────────────────────────────────────────────────────
+  let lastResult = null;
+  function refresh() {
+    lastResult = A4.render($("#canvas"), state, { mode: "issue", issue, content, resolveMap: resolveMapIssue });
+    renderRail();
+  }
+
+  function counts() {
+    const zones = lastResult.zones;
+    const empty = zones.filter((z) => !z.filled).length;
+    const figs = lastResult.figures;
+    const unresolved = figs.filter((f) => f.resolution.kind === "unresolved").length;
+    return { totalZones: zones.length, filled: zones.length - empty, empty, unresolved, figs };
+  }
+
+  function renderRail() {
+    const c = counts();
+    const pct = c.totalZones ? Math.round(c.filled / c.totalZones * 100) : 100;
+    const figRows = c.figs.map((f) => {
+      const r = f.resolution;
+      if (r.kind === "resolved")
+        return `<li><span class="ico ok">✓</span><b>Fig. ${f.num}</b> ${shortCap(f.caption)}<span class="d">${D.frDate(r.dateLabel)}</span></li>`;
+      if (r.kind === "skipped")
+        return `<li><span class="ico" style="color:#9aa7ad">∅</span><b>Fig. ${f.num}</b> ${shortCap(f.caption)}<span class="d">masquée</span></li>`;
+      return `<li class="w" data-gofig="${f.id}"><span class="ico warn">⚠</span><b>Fig. ${f.num}</b> ${shortCap(f.caption)}<span class="d">non résolue</span></li>`;
+    }).join("");
+
+    const blocked = c.unresolved > 0 || c.empty > 0;
+    let note;
+    if (blocked) {
+      const bits = [];
+      if (c.unresolved) bits.push(`<b>${c.unresolved} figure${c.unresolved > 1 ? "s" : ""} non résolue${c.unresolved > 1 ? "s" : ""}</b>`);
+      if (c.empty) bits.push(`<b>${c.empty} zone${c.empty > 1 ? "s" : ""} vide${c.empty > 1 ? "s" : ""}</b>`);
+      note = `<div class="blocknote">⚠ <span>${bits.join(" et ")} — à traiter avant de générer le PDF.</span></div>`;
+    } else {
+      note = `<div class="blocknote ok">✓ <span>Tout est prêt : ${c.totalZones} zones remplies, ${c.figs.length} figures résolues.</span></div>`;
+    }
+
+    $("#rail").innerHTML = `
+      <div class="grp"><div class="gt">Ce numéro</div>
+        <div class="f"><label>Numéro</label><input type="text" id="m_num" value="${attr(issue.issue_number)}"></div>
+        <div class="grid2">
+          <div class="f"><label>Début de période</label><input type="date" id="m_ps" value="${issue.period_start}"></div>
+          <div class="f"><label>Fin de période</label><input type="date" id="m_pe" value="${issue.period_end}"></div>
+        </div>
+        <div class="f"><label>Date du numéro</label><input type="date" id="m_id" value="${issue.issue_date}"></div>
+      </div>
+      <div class="grp prog"><div class="gt">Avancement de la saisie</div>
+        <div class="nums"><span class="big">${c.filled} / ${c.totalZones}</span><span class="lbl">zones de texte remplies</span></div>
+        <div class="pbar"><div style="width:${pct}%"></div></div>
+      </div>
+      <div class="grp"><div class="gt">Figures (${c.figs.length})</div>
+        <ul class="fl">${figRows}</ul></div>
+      <div class="cta">
+        ${note}
+        <button class="gen" id="genBtn" ${blocked ? "disabled" : ""}>Générer le PDF</button>
+      </div>`;
+
+    // wire rail
+    $("#m_num").oninput = (e) => { issue.issue_number = e.target.value; syncTitle(); };
+    $("#m_ps").onchange = (e) => { issue.period_start = e.target.value; syncTitle(); refresh(); };
+    $("#m_pe").onchange = (e) => { issue.period_end = e.target.value; syncTitle(); refresh(); flash("Période modifiée — cartes ré-résolues."); };
+    $("#m_id").onchange = (e) => { issue.issue_date = e.target.value; refresh(); };
+    $("#genBtn").onclick = generate;
+    $("#rail").querySelectorAll("[data-gofig]").forEach((li) => {
+      li.onclick = () => {
+        const node = $(`.unres[data-unres="${li.getAttribute("data-gofig")}"]`);
+        if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+    });
+  }
+  function shortCap(c) { const s = (c || "").replace(/\{[^}]+\}/g, "…"); return s.length > 26 ? s.slice(0, 26) + "…" : s; }
+  function attr(s) { return String(s == null ? "" : s).replace(/"/g, "&quot;"); }
+
+  function syncTitle() {
+    $("#issueTitle").textContent = `N° ${issue.issue_number} — période du ${D.frDate(issue.period_start)} au ${D.frDate(issue.period_end)}`;
+  }
+
+  // ── canvas: inline editing + map actions ──────────────────────────────
+  const canvas = $("#canvas");
+
+  canvas.addEventListener("input", (e) => {
+    const node = e.target.closest("[contenteditable][data-el]");
+    if (!node) return;
+    const id = node.getAttribute("data-el");
+    content[id] = content[id] || {};
+    content[id].html = node.innerHTML;
+    // update filled state live without full re-render (preserve caret)
+    const ez = node.closest(".ez.fillable");
+    if (ez) {
+      const filled = node.innerText.trim().length > 0;
+      ez.classList.toggle("filled", filled); ez.classList.toggle("empty", !filled);
+    }
+    updateProgressOnly();
+  });
+
+  // paste as sanitized text
+  canvas.addEventListener("paste", (e) => {
+    const node = e.target.closest("[contenteditable]");
+    if (!node) return;
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+    document.execCommand("insertText", false, text);
+  });
+
+  canvas.addEventListener("focusin", (e) => {
+    const node = e.target.closest(".ez.fillable [contenteditable]");
+    if (node) { node.closest(".ez.fillable").classList.add("editing"); showToolbar(node); }
+  });
+  canvas.addEventListener("focusout", (e) => {
+    const ez = e.target.closest(".ez.fillable");
+    if (ez) ez.classList.remove("editing");
+    setTimeout(() => { if (!document.activeElement || !document.activeElement.isContentEditable) hideToolbar(); }, 120);
+  });
+
+  canvas.addEventListener("click", (e) => {
+    const use = e.target.closest("[data-use]");
+    if (use) { setTime(use.getAttribute("data-use"), use.getAttribute("data-time")); return; }
+    const hide = e.target.closest("[data-hide]");
+    if (hide) { (content[hide.getAttribute("data-hide")] = content[hide.getAttribute("data-hide")] || {}).skip = true; refresh(); return; }
+    const unh = e.target.closest("[data-unhide]");
+    if (unh) { delete (content[unh.getAttribute("data-unhide")] || {}).skip; refresh(); return; }
+    const pick = e.target.closest("[data-pick]");
+    if (pick) { openDatePicker(pick.getAttribute("data-pick"), pick); return; }
+    const chip = e.target.closest("[data-mapchip]");
+    if (chip) { openDatePicker(chip.getAttribute("data-mapchip"), chip); return; }
+  });
+
+  function setTime(id, t) { (content[id] = content[id] || {}).time = t; refresh(); flash("Figure résolue."); }
+
+  // date picker popover
+  let dpop = null, dback = null;
+  function openDatePicker(elId, anchor) {
+    closeDate();
+    const found = findEl(elId); if (!found) return;
+    const layer = D.LAYER_INDEX[found.layer_id];
+    dback = document.createElement("div"); dback.className = "pop-backdrop"; dback.onclick = closeDate;
+    document.body.appendChild(dback);
+    dpop = document.createElement("div"); dpop.className = "datepop";
+    let html = `<div class="h">Choisir le fichier</div>`;
+    (layer.timestamps || []).slice().sort().reverse().forEach((t) => {
+      const cur = (content[elId] || {}).time === t ? " ✓" : "";
+      html += `<button data-t="${t}">${D.frDate(t)}${cur}</button>`;
+    });
+    if (!layer.timestamps || !layer.timestamps.length) html += `<div style="padding:8px;color:#8496a0;font-size:12px">Aucun fichier disponible</div>`;
+    dpop.innerHTML = html;
+    document.body.appendChild(dpop);
+    const r = anchor.getBoundingClientRect();
+    dpop.style.top = Math.min(r.bottom + 6, window.innerHeight - 250) + "px";
+    dpop.style.left = Math.max(12, Math.min(r.left, window.innerWidth - 222)) + "px";
+    dpop.querySelectorAll("[data-t]").forEach((b) => b.onclick = () => { setTime(elId, b.getAttribute("data-t")); closeDate(); });
+  }
+  function closeDate() { if (dpop) dpop.remove(); if (dback) dback.remove(); dpop = dback = null; }
+
+  function findEl(id) {
+    let r = null;
+    state.pages.forEach((pg) => pg.sections.forEach((sec) => (sec.rows || []).forEach((row) =>
+      (row.columns || []).forEach((col) => (col.elements || []).forEach((el) => { if (el.id === id) r = el; })))));
+    return r;
+  }
+
+  // ── floating rich-text toolbar ────────────────────────────────────────
+  let tb = null;
+  function ensureTb() {
+    if (tb) return tb;
+    tb = document.createElement("div"); tb.className = "rttb"; tb.style.display = "none";
+    tb.innerHTML = `<button data-c="bold" style="font-weight:bold">B</button>
+      <button data-c="italic" style="font-style:italic">I</button>
+      <div class="sep"></div>
+      <button data-c="insertUnorderedList">•≡</button>
+      <div class="sep"></div>
+      <button data-c="undo" title="Annuler">↶</button>`;
+    document.body.appendChild(tb);
+    tb.addEventListener("mousedown", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      e.preventDefault();
+      document.execCommand(b.getAttribute("data-c"), false, null);
+      syncTbState();
+    });
+    return tb;
+  }
+  function showToolbar(node) {
+    ensureTb();
+    const r = node.getBoundingClientRect();
+    tb.style.display = "flex";
+    tb.style.top = Math.max(8, r.top - 38) + "px";
+    tb.style.left = r.left + "px";
+    syncTbState();
+  }
+  function hideToolbar() { if (tb) tb.style.display = "none"; }
+  function syncTbState() {
+    if (!tb) return;
+    try {
+      tb.querySelector('[data-c="bold"]').classList.toggle("on", document.queryCommandState("bold"));
+      tb.querySelector('[data-c="italic"]').classList.toggle("on", document.queryCommandState("italic"));
+      tb.querySelector('[data-c="insertUnorderedList"]').classList.toggle("on", document.queryCommandState("insertUnorderedList"));
+    } catch (e) {}
+  }
+  document.addEventListener("selectionchange", () => { if (tb && tb.style.display !== "none") syncTbState(); });
+
+  // ── progress-only update (no full re-render, keeps caret) ─────────────
+  function updateProgressOnly() {
+    // recompute zone fill from DOM
+    const zones = canvas.querySelectorAll(".ez.fillable [contenteditable]");
+    let filled = 0; zones.forEach((z) => { if (z.innerText.trim().length) filled++; });
+    const total = zones.length, empty = total - filled;
+    const pct = total ? Math.round(filled / total * 100) : 100;
+    const big = $(".prog .big"), bar = $(".pbar div");
+    if (big) big.textContent = `${filled} / ${total}`;
+    if (bar) bar.style.width = pct + "%";
+    // toggle generate/block note if empties cleared (cheap: only when crossing 0)
+    const unresolved = lastResult.figures.filter((f) => f.resolution.kind === "unresolved").length;
+    const blocked = unresolved > 0 || empty > 0;
+    const gen = $("#genBtn");
+    if (gen) gen.disabled = blocked;
+    const note = $(".cta .blocknote");
+    if (note && !blocked) { note.className = "blocknote ok"; note.innerHTML = `✓ <span>Tout est prêt : ${total} zones remplies, ${lastResult.figures.length} figures résolues.</span>`; }
+  }
+
+  // ── generate (simulated) ──────────────────────────────────────────────
+  function generate() {
+    const btn = $("#genBtn"); if (btn.disabled) return;
+    btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Génération du PDF…`;
+    setTimeout(() => {
+      $("#statusTag").textContent = "PDF généré"; $("#statusTag").className = "tag gen";
+      $(".cta").innerHTML = `<div class="blocknote ok">✓ <span>PDF généré (4 pages, 1,2 Mo).</span></div>
+        <a class="btn pri" href="../mockups/05-issue-publish.html" style="width:100%;justify-content:center">Relire &amp; publier →</a>`;
+      toast(`PDF généré`, `<a href="../mockups/05-issue-publish.html">Relire &amp; publier →</a>`);
+    }, 1500);
+  }
+
+  // ── toast / flash ──────────────────────────────────────────────────────
+  let toastTimer = null;
+  function toast(msg, extra) {
+    let t = $("#toast");
+    if (!t) { t = document.createElement("div"); t.id = "toast"; t.className = "toast"; document.body.appendChild(t); }
+    t.innerHTML = `<div class="ic">✓</div><span>${msg}</span>${extra || ""}`;
+    requestAnimationFrame(() => t.classList.add("show"));
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 4200);
+  }
+  function flash(msg) { toast(msg); }
+
+  syncTitle();
+  refresh();
+})();
+</script>
+</body>
+</html>

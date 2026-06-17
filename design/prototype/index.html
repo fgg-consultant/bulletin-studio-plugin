@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulletin Studio — Prototypes WYSIWYG</title>
+<link rel="stylesheet" href="studio.css">
+<style>
+  body{display:grid;place-items:center;min-height:100vh;
+    background:radial-gradient(1200px 600px at 50% -10%,#063a3b 0%,#0c2226 55%,#0a181b 100%)}
+  .wrap{width:760px;max-width:92vw;text-align:center;color:#e7eef0;padding:40px 0}
+  .logo{width:58px;height:58px;border-radius:14px;background:var(--teal);display:grid;place-items:center;
+    margin:0 auto 18px;box-shadow:0 10px 30px rgba(0,93,94,.5)}
+  .logo svg{width:30px;height:30px}
+  h1{font-family:var(--display);font-weight:650;font-size:34px;letter-spacing:-.01em}
+  .sub{color:#9fb8bc;margin-top:8px;font-size:14px;line-height:1.6}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px;text-align:left}
+  .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:24px;
+    text-decoration:none;color:#e7eef0;transition:.16s;display:block}
+  .card:hover{background:rgba(255,255,255,.08);border-color:var(--teal);transform:translateY(-2px)}
+  .card .n{font:800 11px var(--ui);letter-spacing:.12em;color:#5bbfc0}
+  .card h2{font-family:var(--display);font-size:20px;font-weight:650;margin:8px 0 6px}
+  .card p{color:#9fb8bc;font-size:13px;line-height:1.55}
+  .card .go{color:var(--teal);font-weight:800;font-size:13px;margin-top:14px;display:inline-block;
+    background:#fff;padding:8px 14px;border-radius:6px}
+  .card.teal .go{background:var(--teal);color:#fff}
+  .foot{margin-top:30px;font-size:12px;color:#6f8a8e;line-height:1.7}
+  .foot b{color:#9fb8bc}
+  .thumb{height:120px;border-radius:9px;background:#fff;margin-bottom:16px;overflow:hidden;
+    display:flex;gap:5px;padding:11px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+  .thumb .pg{flex:1;display:flex;flex-direction:column;gap:4px}
+  .thumb .l{height:4px;background:#e4e8ea;border-radius:2px}.thumb .l.w6{width:60%}
+  .thumb .cc{display:flex;gap:5px;flex:1}.thumb .cc>div{flex:1;display:flex;flex-direction:column;gap:4px}
+  .thumb .m{flex:1;border-radius:3px;background:linear-gradient(135deg,#cfe5f2,#2f6f9e)}
+  .thumb .m.r{background:linear-gradient(135deg,#f4c9bd,#b03a2e)}
+  .thumb .hd{display:flex;gap:4px}.thumb .hd .lo{width:22px;height:14px;border-radius:2px;
+    background:linear-gradient(120deg,#9ed4f0,#f6c344)}.thumb .hd .t{flex:1;height:14px;background:#eef1f2;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.5"><path d="M5 2h8l3 3v13H5z"/><path d="M8 9h6M8 12h6M8 15h4"/></svg></div>
+  <h1>Bulletin Studio</h1>
+  <p class="sub">Prototypes WYSIWYG interactifs — <b style="color:#cfe0e4">front uniquement, données mockées</b>.<br>
+  Conçus pour ressentir l'expérience concrète avant l'intégration backend.</p>
+
+  <div class="cards">
+    <a class="card teal" href="template-editor.html">
+      <div class="thumb">
+        <div class="pg"><div class="hd"><div class="lo"></div><div class="t"></div></div>
+          <div class="l"></div><div class="l w6"></div>
+          <div class="cc"><div><div class="l"></div><div class="m"></div><div class="l w6"></div></div>
+          <div><div class="l"></div><div class="m r"></div><div class="l"></div></div></div></div>
+      </div>
+      <div class="n">03 · ÉDITEUR</div>
+      <h2>Éditeur de template</h2>
+      <p>Composez la maquette : lignes/colonnes, titres, textes, encadrés et cartes geomanager. Sélection, palette, panneau de propriétés, multi-pages. Sauvegarde locale.</p>
+      <span class="go">Ouvrir l'éditeur →</span>
+    </a>
+
+    <a class="card" href="issue-fill.html">
+      <div class="thumb">
+        <div class="pg"><div class="hd"><div class="lo"></div><div class="t"></div></div>
+          <div class="l"></div>
+          <div class="cc"><div><div class="l"></div><div class="l"></div><div class="l w6"></div></div>
+          <div><div class="m"></div><div class="m r"></div></div></div></div>
+      </div>
+      <div class="n">04 · SAISIE</div>
+      <h2>Remplissage d'un numéro</h2>
+      <p>Édition en ligne des zones de prose, cartes résolues à la période, figure non résolue à régler, suivi d'avancement et génération du PDF.</p>
+      <span class="go">Ouvrir la saisie →</span>
+    </a>
+  </div>
+
+  <p class="foot">
+    Ouvrez ces fichiers directement dans un navigateur (aucun serveur requis).<br>
+    Le renderer A4 (<b>a4.js</b>) est <b>partagé</b> entre les deux écrans — l'aperçu écran = le futur PDF par construction.
+  </p>
+</div>
+</body>
+</html>

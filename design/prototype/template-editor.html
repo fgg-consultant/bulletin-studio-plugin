@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulletin Studio — Éditeur de template (prototype)</title>
+<link rel="stylesheet" href="studio.css">
+</head>
+<body>
+<div class="app mode-template">
+
+  <div class="bar">
+    <a class="back" href="index.html" title="Retour">←</a>
+    <div class="titleblock">
+      <span class="name" id="tplName" contenteditable="true" spellcheck="false">Bulletin Agrométéorologique Décadaire</span>
+    </div>
+    <span class="tag">TEMPLATE</span>
+    <div class="seg" id="modeSeg">
+      <button data-mode="body" class="on">Corps</button>
+      <button data-mode="hf">En-tête &amp; pied</button>
+    </div>
+    <div class="pages" id="pageTabs"><span class="lbl">PAGES</span></div>
+    <div class="saved" id="saved"><span class="dot"></span><span id="savedTxt">Enregistré</span></div>
+    <button class="btn sec" id="previewBtn">Aperçu PDF</button>
+    <button class="btn pri" id="resetBtn" title="Réinitialiser le prototype">Réinitialiser</button>
+  </div>
+
+  <div class="work">
+    <div class="canvas" id="canvas"></div>
+    <aside class="props" id="props"></aside>
+  </div>
+
+  <div class="hintbar">
+    Prototype front — données mockées. <b>Cliquez</b> un élément pour le configurer · <b>survolez</b> entre les lignes pour le <kbd>＋</kbd> · titres &amp; textes éditables en ligne · onglets <kbd>Pages</kbd> en haut à droite.
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="a4.js"></script>
+<script>
+(function () {
+  "use strict";
+  const D = window.STUDIO_DATA, A4 = window.A4;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const LS = "bulletin-studio-proto-template";
+
+  // ── state ───────────────────────────────────────────────────────────
+  let state = load();
+  let sel = null;       // selected element id
+  let hf = false;       // header/footer mode
+
+  function load() {
+    try { const j = localStorage.getItem(LS); if (j) return JSON.parse(j); } catch (e) {}
+    return D.sampleTemplate();
+  }
+  function persist() {
+    localStorage.setItem(LS, JSON.stringify(state));
+    flagSaved(false);
+  }
+  let dirtyTimer = null;
+  function flagSaved(dirty) {
+    const dot = $("#saved .dot"), txt = $("#savedTxt");
+    if (dirty) { dot.classList.add("dirty"); txt.textContent = "Modifié…"; }
+    else { dot.classList.remove("dirty"); txt.textContent = "Enregistré"; }
+  }
+  function touch() {
+    flagSaved(true);
+    clearTimeout(dirtyTimer);
+    dirtyTimer = setTimeout(persist, 600);
+  }
+
+  // ── element lookup helpers ───────────────────────────────────────────
+  function walk(fn) {
+    state.pages.forEach((pg, pi) => pg.sections.forEach((sec) => (sec.rows || []).forEach((row) =>
+      (row.columns || []).forEach((col) => (col.elements || []).forEach((el, ei) =>
+        fn(el, { page: pg, section: sec, row, col, ei, pi }))))));
+  }
+  function findEl(id) { let r = null; walk((el, c) => { if (el.id === id) r = { el, ctx: c }; }); return r; }
+  function findRow(id) {
+    let r = null;
+    state.pages.forEach((pg) => pg.sections.forEach((sec) => (sec.rows || []).forEach((row) => {
+      if (row.id === id) r = { row, section: sec };
+    })));
+    return r;
+  }
+
+  // ── render ───────────────────────────────────────────────────────────
+  function resolveMapTemplate(el) {
+    const layer = D.LAYER_INDEX[el.layer_id];
+    if (!layer) return { kind: "unresolved", message: "Couche introuvable" };
+    return { kind: "resolved",
+      svg: D.mapSVG(layer, { legend: el.show_legend !== false, boundaries: el.show_boundaries !== false }),
+      dateLabel: layer.timestamps[0] };
+  }
+
+  function rerender() {
+    A4.render($("#canvas"), state, { mode: "template", issue: null, selectedId: sel, hf, resolveMap: resolveMapTemplate });
+    renderPageTabs();
+    renderProps();
+  }
+
+  function renderPageTabs() {
+    const wrap = $("#pageTabs");
+    wrap.querySelectorAll("button").forEach((b) => b.remove());
+    state.pages.forEach((pg, i) => {
+      const b = document.createElement("button");
+      b.textContent = i + 1;
+      b.onclick = () => { document.querySelectorAll(".sheet")[i].scrollIntoView({ behavior: "smooth", block: "start" }); markPage(i); };
+      wrap.appendChild(b);
+    });
+    const add = document.createElement("button");
+    add.textContent = "＋"; add.title = "Ajouter une page";
+    add.onclick = addPage;
+    wrap.appendChild(add);
+    markPage(0);
+  }
+  function markPage(i) {
+    const btns = $("#pageTabs").querySelectorAll("button");
+    btns.forEach((b, k) => b.classList.toggle("on", k === i && b.textContent !== "＋"));
+  }
+
+  // ── properties panel ─────────────────────────────────────────────────
+  function renderProps() {
+    const p = $("#props");
+    if (hf) { p.innerHTML = hfPanel(); return; }
+    if (!sel) {
+      p.innerHTML = `<div class="empty"><div class="big">⚙</div>
+        <b>Aucun élément sélectionné</b><p style="margin-top:6px;font-size:12.5px">
+        Cliquez un élément du bulletin pour le configurer, ou utilisez le <b>＋</b> entre les lignes pour en ajouter.</p></div>`;
+      return;
+    }
+    const found = findEl(sel);
+    if (!found) { sel = null; renderProps(); return; }
+    const el = found.el;
+    p.innerHTML = ({
+      title: titleProps, text: textProps, field: fieldProps,
+      box: boxProps, map: mapProps, divider: simpleProps, spacer: spacerProps,
+    }[el.type] || simpleProps)(el);
+    wireProps(el);
+  }
+
+  const ICONS = { title: "𝐓", text: "¶", field: "{ }", box: "▦", map: "◈", divider: "—", spacer: "↕" };
+  const TYPELBL = { title: "Titre", text: "Texte", field: "Champ dynamique", box: "Encadré", map: "Carte geomanager", divider: "Séparateur", spacer: "Espace" };
+  function head(el, sub) {
+    return `<div class="ph"><div class="ico">${ICONS[el.type]}</div><div><b>${TYPELBL[el.type]}</b><div class="sub">${sub || ""}</div></div></div>`;
+  }
+
+  function titleProps(el) {
+    return head(el) + `<div class="grp"><div class="gt">Contenu</div>
+      <div class="f"><label>Texte</label><input type="text" data-k="text" value="${attr(el.text)}"></div>
+      <div class="f"><label>Niveau</label><select data-k="level">
+        <option value="1" ${el.level==1?"selected":""}>Titre principal</option>
+        <option value="2" ${el.level==2?"selected":""}>Titre de section</option>
+        <option value="3" ${el.level==3?"selected":""}>Sous-titre</option></select></div>
+      <div class="help">Astuce : le texte peut contenir des variables comme <code>{produit}</code>.</div></div>`;
+  }
+  function textProps(el) {
+    return head(el) + `<div class="grp"><div class="gt">Comportement</div>
+      <div class="sw"><div><div class="lb">Modifiable à chaque numéro</div>
+        <div class="de">zone de prose remplie lors de la saisie</div></div>
+        <button class="tg ${el.editable?"on":""}" data-k="editable"></button></div></div>
+      <div class="grp"><div class="gt">Contenu par défaut</div>
+        <div class="f"><textarea data-k="html" rows="4">${el.html||""}</textarea>
+        <div class="help">Laissé vide, la zone affiche un texte d'invite lors de la saisie du numéro.</div></div></div>`;
+  }
+  function fieldProps(el) {
+    return head(el, "rendu automatiquement par numéro") + `<div class="grp"><div class="gt">Modèle de texte</div>
+      <div class="f"><input type="text" data-k="text" value="${attr(el.text)}"></div>
+      <div class="fignote">ℹ️ <span>Variables : <code>{issue_number}</code> <code>{period_start}</code> <code>{period_end}</code> <code>{issue_date}</code> <code>{product_name}</code></span></div></div>`;
+  }
+  function boxProps(el) {
+    if (el.variant === "toc") {
+      const rows = (el.items||[]).map((it,i)=>`<div class="f" style="display:flex;gap:6px;align-items:center">
+        <input type="text" data-toc="${i}:0" value="${attr(it[0])}" style="flex:1">
+        <input type="text" data-toc="${i}:1" value="${attr(it[1])}" style="width:46px;text-align:center"></div>`).join("");
+      return head(el, "sommaire / table des matières") + `<div class="grp"><div class="gt">Titre</div>
+        <div class="f"><input type="text" data-k="title" value="${attr(el.title)}"></div></div>
+        <div class="grp"><div class="gt">Lignes</div>${rows}
+        <button class="btn ghost" data-toc-add style="margin-top:4px;width:100%">＋ Ajouter une ligne</button></div>`;
+    }
+    return head(el, "encadré de points saillants") + `<div class="grp"><div class="gt">Titre</div>
+      <div class="f"><input type="text" data-k="title" value="${attr(el.title)}"></div></div>
+      <div class="grp"><div class="gt">Comportement</div>
+      <div class="sw"><div><div class="lb">Modifiable à chaque numéro</div>
+        <div class="de">contenu rempli lors de la saisie</div></div>
+        <button class="tg ${el.editable?"on":""}" data-k="editable"></button></div></div>`;
+  }
+  function mapProps(el) {
+    const layer = D.LAYER_INDEX[el.layer_id] || {};
+    let catOpts = D.GEO_TREE.map((c)=>`<option value="${c.id}" ${c.id==layer.categoryId?"selected":""}>${c.title}</option>`).join("");
+    const cat = D.GEO_TREE.find((c)=>c.id==layer.categoryId) || D.GEO_TREE[0];
+    let dsOpts = cat.datasets.map((d)=>`<option value="${d.id}" ${d.id==layer.datasetId?"selected":""}>${d.title}</option>`).join("");
+    const ds = cat.datasets.find((d)=>d.id==layer.datasetId) || cat.datasets[0];
+    let lyrOpts = ds.layers.map((l)=>`<option value="${l.id}" ${l.id==el.layer_id?"selected":""}>${l.title}</option>`).join("");
+    const m = (el.time_strategy||{}).mode || "latest_at_period_end";
+    return head(el, "Figure " + el._fig + " · couche raster") +
+      `<div class="grp cascade"><div class="gt">Source de données</div>
+        <div class="f"><label>Catégorie</label><select data-cat>${catOpts}</select></div>
+        <div class="f"><label>Jeu de données</label><select data-ds>${dsOpts}</select></div>
+        <div class="f"><label>Couche</label><select data-lyr>${lyrOpts}</select>
+          <div class="help">Couches raster uniquement (v1)</div></div></div>
+      <div class="grp"><div class="gt">Aperçu</div>
+        <div class="prev">${D.mapSVG(layer,{legend:el.show_legend!==false,boundaries:el.show_boundaries!==false})}
+          <div class="cap"><span>Dernier fichier disponible</span><b>${D.frDate((layer.timestamps||[])[0])}</b></div></div></div>
+      <div class="grp"><div class="gt">Date du fichier</div>
+        <div class="f"><label>Stratégie de résolution</label><select data-k="time_strategy.mode">
+          <option value="latest_at_period_end" ${m=="latest_at_period_end"?"selected":""}>Dernier fichier ≤ fin de période (auto)</option>
+          <option value="latest_at_issue_date" ${m=="latest_at_issue_date"?"selected":""}>Dernier fichier ≤ date du numéro</option>
+          <option value="offset_days" ${m=="offset_days"?"selected":""}>Décalage fixe (N jours avant fin)</option></select>
+          <div class="help">À chaque numéro la carte est générée avec le fichier correspondant à la période.</div></div></div>
+      <div class="grp"><div class="gt">Habillage</div>
+        <div class="sw"><div><div class="lb">Style de la couche</div><div class="de">palette geomanager</div></div>
+          <button class="tg ${el.use_layer_style!==false?"on":""}" data-k="use_layer_style"></button></div>
+        <div class="sw"><div><div class="lb">Légende</div><div class="de">sous la carte dans le PDF</div></div>
+          <button class="tg ${el.show_legend!==false?"on":""}" data-k="show_legend"></button></div>
+        <div class="sw"><div><div class="lb">Contours administratifs</div><div class="de">limites + chefs-lieux</div></div>
+          <button class="tg ${el.show_boundaries!==false?"on":""}" data-k="show_boundaries"></button></div></div>
+      <div class="grp"><div class="gt">Légende de figure</div>
+        <div class="f"><input type="text" data-k="caption" value="${attr(el.caption)}"></div>
+        <div class="fignote">ℹ️ <span>La numérotation <b>Figure 1, 2, 3…</b> est automatique, dans l'ordre du document.</span></div></div>`;
+  }
+  function simpleProps(el) { return head(el) + `<div class="grp"><div class="help">Aucun réglage. Utilisez la barre d'outils flottante pour déplacer ou supprimer cet élément.</div></div>`; }
+  function spacerProps(el) {
+    return head(el) + `<div class="grp"><div class="gt">Hauteur</div>
+      <div class="f"><input type="number" data-k="height_mm" value="${el.height_mm||5}" min="1" max="60"> <span class="help">millimètres</span></div></div>`;
+  }
+  function hfPanel() {
+    return `<div class="ph"><div class="ico">▤</div><div><b>En-tête &amp; pied</b><div class="sub">répétés sur chaque page</div></div></div>
+      <div class="grp"><div class="fignote">ℹ️ <span>Mode en-tête/pied actif. Le corps est grisé. Le <b>titre central</b> de l'en-tête est modifiable directement sur la page.</span></div></div>
+      <div class="grp"><div class="gt">En-tête</div>
+        <div class="help">Tableau logo · titre · réf/date/page. Les champs <code>date</code> et <code>page X/Y</code> sont automatiques.</div></div>
+      <div class="grp"><div class="gt">Pied de page</div>
+        <div class="help">Liens, QR code et numéro de bulletin. (Édition complète : version suivante.)</div></div>`;
+  }
+  function attr(s) { return String(s == null ? "" : s).replace(/"/g, "&quot;"); }
+
+  function wireProps(el) {
+    const p = $("#props");
+    p.querySelectorAll("[data-k]").forEach((node) => {
+      const key = node.getAttribute("data-k");
+      if (node.classList.contains("tg")) {
+        node.onclick = () => { setKey(el, key, !getKey(el, key)); node.classList.toggle("on"); rerender(); touch(); };
+      } else {
+        node.oninput = () => {
+          let v = node.value;
+          if (node.type === "number") v = parseInt(v, 10) || 0;
+          if (key === "level") v = parseInt(v, 10);
+          setKey(el, key, v); rerender(); touch();
+        };
+      }
+    });
+    // TOC line edits
+    p.querySelectorAll("[data-toc]").forEach((node) => {
+      node.oninput = () => {
+        const [i, j] = node.getAttribute("data-toc").split(":").map(Number);
+        el.items[i][j] = node.value; rerender(); touch();
+      };
+    });
+    const tocAdd = p.querySelector("[data-toc-add]");
+    if (tocAdd) tocAdd.onclick = () => { el.items.push(["Nouvelle section", ""]); rerender(); touch(); };
+    // map cascading selects
+    const catSel = p.querySelector("[data-cat]"), dsSel = p.querySelector("[data-ds]"), lyrSel = p.querySelector("[data-lyr]");
+    if (catSel) {
+      catSel.onchange = () => { const c = D.GEO_TREE.find((x) => x.id == catSel.value); el.layer_id = c.datasets[0].layers[0].id; rerender(); touch(); };
+      dsSel.onchange = () => {
+        const c = D.GEO_TREE.find((x) => x.id == catSel.value);
+        const d = c.datasets.find((x) => x.id == dsSel.value); el.layer_id = d.layers[0].id; rerender(); touch();
+      };
+      lyrSel.onchange = () => { el.layer_id = lyrSel.value; rerender(); touch(); };
+    }
+  }
+  function setKey(el, key, v) {
+    if (key.indexOf(".") > 0) { const [a, b] = key.split("."); el[a] = el[a] || {}; el[a][b] = v; }
+    else el[key] = v;
+  }
+  function getKey(el, key) {
+    if (key.indexOf(".") > 0) { const [a, b] = key.split("."); return (el[a] || {})[b]; }
+    return el[key];
+  }
+
+  // ── canvas interactions (event delegation) ───────────────────────────
+  const canvas = $("#canvas");
+
+  canvas.addEventListener("click", (e) => {
+    // unhide / hide handled in issue screen; template ignores
+    const ins = e.target.closest(".ins");
+    if (ins) { openPalette(ins.getAttribute("data-ins"), ins); return; }
+    const addcol = e.target.closest(".col-empty");
+    if (addcol) { openPalette("col:" + addcol.getAttribute("data-addcol"), addcol); return; }
+    const toolBtn = e.target.closest(".tools button");
+    if (toolBtn) { e.stopPropagation(); doTool(toolBtn.closest(".elwrap").getAttribute("data-el"), toolBtn.getAttribute("data-act")); return; }
+    const wrap = e.target.closest(".elwrap");
+    if (wrap) { select(wrap.getAttribute("data-el")); return; }
+    const band = e.target.closest(".band-locked");
+    if (band) { toast("Passez en mode « En-tête & pied » pour éditer cette zone."); return; }
+  });
+
+  // inline editing persistence
+  canvas.addEventListener("input", (e) => {
+    const node = e.target.closest("[contenteditable][data-store]");
+    if (!node) return;
+    if (node.getAttribute("data-el") === "__header_title") return; // header title not persisted in proto
+    const wrap = node.closest(".elwrap");
+    if (!wrap) return;
+    const found = findEl(wrap.getAttribute("data-el"));
+    if (!found) return;
+    const store = node.getAttribute("data-store");
+    if (store === "text") found.el.text = node.innerText;
+    else found.el.html = node.innerHTML;
+    touch();
+  });
+  canvas.addEventListener("focusin", (e) => {
+    const node = e.target.closest("[contenteditable]");
+    if (node) node.classList.add("editing");
+  });
+  canvas.addEventListener("focusout", (e) => {
+    const node = e.target.closest("[contenteditable]");
+    if (node) node.classList.remove("editing");
+  });
+
+  function select(id) { sel = id; rerender(); }
+
+  function doTool(id, act) {
+    const f = findEl(id); if (!f) return;
+    const arr = f.ctx.col.elements, i = f.ctx.ei;
+    if (act === "up" && i > 0) { arr.splice(i - 1, 0, arr.splice(i, 1)[0]); }
+    else if (act === "down" && i < arr.length - 1) { arr.splice(i + 1, 0, arr.splice(i, 1)[0]); }
+    else if (act === "dup") { const c = D.clone(f.el); c.id = D.uid("el"); arr.splice(i + 1, 0, c); sel = c.id; }
+    else if (act === "del") { arr.splice(i, 1); if (sel === id) sel = null; }
+    rerender(); touch();
+  }
+
+  // ── element palette ──────────────────────────────────────────────────
+  const ELS = [
+    { t: "title", ic: "𝐓", lb: "Titre", de: "de section" },
+    { t: "text", ic: "¶", lb: "Texte", de: "éditable par numéro" },
+    { t: "field", ic: "{ }", lb: "Champ", de: "numéro, période…" },
+    { t: "map", ic: "◈", lb: "Carte", de: "couche geomanager" },
+    { t: "box", ic: "▦", lb: "Encadré", de: "sommaire, saillants" },
+    { t: "divider", ic: "—", lb: "Séparateur", de: "filet horizontal" },
+    { t: "spacer", ic: "↕", lb: "Espace", de: "marge verticale" },
+  ];
+  const STRUCTS = [[12], [6, 6], [4, 8], [4, 4, 4]];
+
+  function defaultElement(t) {
+    const id = D.uid("el");
+    if (t === "title") return { id, type: "title", level: 2, text: "Nouveau titre" };
+    if (t === "text") return { id, type: "text", editable: true, html: "" };
+    if (t === "field") return { id, type: "field", field: "issue_line", text: "N° {issue_number} — {period}" };
+    if (t === "box") return { id, type: "box", variant: "highlights", editable: true, title: "Sommaire :", html: "" };
+    if (t === "map") return { id, type: "map", layer_id: "lyr-cumul", time_strategy: { mode: "latest_at_period_end" },
+      use_layer_style: true, show_legend: true, show_boundaries: true, caption: "Légende de la carte" };
+    if (t === "divider") return { id, type: "divider" };
+    if (t === "spacer") return { id, type: "spacer", height_mm: 6 };
+  }
+
+  let paletteEl = null, paletteBackdrop = null;
+  function openPalette(token, anchor) {
+    closePalette();
+    paletteBackdrop = document.createElement("div");
+    paletteBackdrop.className = "pop-backdrop"; paletteBackdrop.onclick = closePalette;
+    document.body.appendChild(paletteBackdrop);
+
+    const isCol = token.startsWith("col:");
+    const pal = document.createElement("div");
+    pal.className = "palette";
+    let html = `<div class="pt">${isCol ? "Ajouter dans cette colonne" : "Insérer un élément"}</div><div class="grid">`;
+    ELS.forEach((e) => { html += `<div class="pi" data-pt="${e.t}"><div class="ic">${e.ic}</div><div class="lb">${e.lb}</div><div class="de">${e.de}</div></div>`; });
+    html += `</div>`;
+    if (!isCol) {
+      html += `<div class="pt" style="margin-top:13px">…ou une ligne en colonnes</div><div class="row-struct">`;
+      STRUCTS.forEach((s, i) => {
+        const spans = s.map((w) => `<span class="${w >= 8 ? "w2" : ""}"></span>`).join("");
+        html += `<div class="rs" data-struct="${i}" title="${s.join(' / ')}">${spans}</div>`;
+      });
+      html += `</div>`;
+    }
+    pal.innerHTML = html;
+    document.body.appendChild(pal);
+    const r = anchor.getBoundingClientRect();
+    let top = r.bottom + 8, left = r.left + r.width / 2 - 190;
+    left = Math.max(12, Math.min(left, window.innerWidth - 392));
+    if (top + 280 > window.innerHeight) top = Math.max(12, r.top - 290);
+    pal.style.top = top + "px"; pal.style.left = left + "px";
+
+    pal.querySelectorAll(".pi").forEach((node) => {
+      node.onclick = () => { addElement(token, defaultElement(node.getAttribute("data-pt"))); closePalette(); };
+    });
+    pal.querySelectorAll(".rs").forEach((node) => {
+      node.onclick = () => { addRow(token, STRUCTS[+node.getAttribute("data-struct")]); closePalette(); };
+    });
+    paletteEl = pal;
+  }
+  function closePalette() {
+    if (paletteEl) paletteEl.remove(); if (paletteBackdrop) paletteBackdrop.remove();
+    paletteEl = paletteBackdrop = null;
+  }
+
+  function addElement(token, el) {
+    if (token.startsWith("col:")) {
+      const [, rowId, ci] = token.match(/^col:(.+):(\d+)$/);
+      const fr = findRow(rowId); if (!fr) return;
+      fr.row.columns[+ci].elements.push(el);
+    } else {
+      // insert a new full-width row containing this element
+      const row = { id: D.uid("row"), columns: [{ width: 12, elements: [el] }] };
+      insertRow(token, row);
+    }
+    sel = el.id; rerender(); touch();
+  }
+  function addRow(token, widths) {
+    const row = { id: D.uid("row"), columns: widths.map((w) => ({ width: w, elements: [] })) };
+    insertRow(token, row); rerender(); touch();
+  }
+  function insertRow(token, row) {
+    // token = "<rowId>:before" or "<secId>:end"
+    const [id, where] = token.split(":");
+    if (where === "before") {
+      const fr = findRow(id); if (!fr) return;
+      const rows = fr.section.rows; rows.splice(rows.indexOf(fr.row), 0, row);
+    } else { // end of section
+      let target = null;
+      state.pages.forEach((pg) => pg.sections.forEach((sec) => { if (sec.id === id) target = sec; }));
+      if (target) target.rows.push(row);
+    }
+  }
+
+  function addPage() {
+    state.pages.push({ id: D.uid("pg"), sections: [{ id: D.uid("sec"), page_break_before: true, rows: [
+      { id: D.uid("row"), columns: [{ width: 12, elements: [] }] }] }] });
+    rerender(); touch();
+    setTimeout(() => document.querySelectorAll(".sheet").forEach((s, i, a) => { if (i === a.length - 1) s.scrollIntoView({ behavior: "smooth" }); }), 50);
+  }
+
+  // ── top bar wiring ────────────────────────────────────────────────────
+  $("#tplName").addEventListener("input", (e) => { state.name = e.target.innerText; rerender(); touch(); });
+  $("#modeSeg").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    hf = b.getAttribute("data-mode") === "hf"; sel = null;
+    $("#modeSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    rerender();
+  });
+  $("#previewBtn").onclick = () => { toast("Aperçu PDF — ouverture de l'impression du navigateur…"); setTimeout(() => window.print(), 500); };
+  $("#resetBtn").onclick = () => { if (confirm("Réinitialiser le template du prototype ?")) { localStorage.removeItem(LS); state = D.sampleTemplate(); sel = null; hf = false; rerender(); } };
+
+  // toast
+  let toastTimer = null;
+  function toast(msg) {
+    let t = $("#toast");
+    if (!t) { t = document.createElement("div"); t.id = "toast"; t.className = "toast"; document.body.appendChild(t); }
+    t.innerHTML = `<div class="ic">✓</div><span>${msg}</span>`;
+    requestAnimationFrame(() => t.classList.add("show"));
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+  }
+
+  rerender();
+})();
+</script>
+</body>
+</html>

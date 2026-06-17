@@ -1,0 +1,11 @@
+{
+  "name": "Bulletin Studio Plugin",
+  "version": "0.0.1",
+  "description": "A plugin to author and publish bulletins in Climweb.",
+  "author": "FGG Consultant",
+  "author_url": "https://github.com/fgg-consultant",
+  "url": "https://github.com/fgg-consultant/bulletin-studio-plugin.git",
+  "license": "MIT",
+  "contact": "",
+  "django_apps": []
+}
